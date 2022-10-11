@@ -1,17 +1,14 @@
 on:
   schedule:
-     - cron: "0 20 * * 1"
-  push:
-     branches:
-     # Default branches below
-       - main
-       - master
+     - cron: "0 21 * * 1"
+#  push:
+#     branches:
+#     # Default branches below
+#       - main
+#       - master
 
 
 name: renderbook
-
-
-
 
 jobs:
   bookdown:
