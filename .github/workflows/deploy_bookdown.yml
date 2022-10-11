@@ -11,7 +11,7 @@ name: renderbook
 jobs:
   bookdown:
     name: Render-Book
-    runs-on: ubuntu-20.04
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       # More detail here, https://github.com/r-lib/actions
@@ -35,7 +35,7 @@ jobs:
           path: _book/
   
   checkout-and-deploy:
-   runs-on: ubuntu-20.04
+   runs-on: windows-latest
    needs: bookdown
    steps:
      - name: Checkout
