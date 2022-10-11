@@ -20,6 +20,10 @@ Hi, this is my test bookdown. Here a silly R script:
 I made this using this: https://lucacozzuto.medium.com/automatic-reports-with-bookdown-and-github-actions-3c19498394aa 
 
 
+This includes docker information too
+
+https://lalejini.com/2021/01/09/bookdown-autodeploy.html
+
 Lets make a plot
 ```{r echo=FALSE, warning = FALSE, message=FALSE, fig.width=7}
 a<-read.csv("data.csv")
