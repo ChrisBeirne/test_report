@@ -1,7 +1,7 @@
 name: scheduleRenderbook
-#on:
-#  schedule:
-#     - cron: "20 * * * *"
+on:     
+#  schedule:     # cant get a cron to work
+#     - cron: "* * * * *"
  push:
     branches:
      #Default branches below
