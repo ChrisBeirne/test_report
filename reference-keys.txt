@@ -1,1 +1,4 @@
-welcome
+movebank-data-update
+time-since-last-check-in
+costa-rica
+peru

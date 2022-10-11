@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Part 2 Time since last check-in | Test-Bookdown</title>
+  <meta name="description" content="Part 2 Time since last check-in | Test-Bookdown" />
+  <meta name="generator" content="bookdown 0.29 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Part 2 Time since last check-in | Test-Bookdown" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Part 2 Time since last check-in | Test-Bookdown" />
+  
+  
+  
+
+<meta name="author" content="ChrisB" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="index.html"/>
+<link rel="next" href="costa-rica.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<script src="libs/accessible-code-block-0.0.1/empty-anchor.js"></script>
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+<link href="libs/bsTable-3.3.7/bootstrapTable.min.css" rel="stylesheet" />
+<script src="libs/bsTable-3.3.7/bootstrapTable.js"></script>
+<script src="libs/htmlwidgets-1.5.4/htmlwidgets.js"></script>
+<link href="libs/leaflet-1.3.1/leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-1.3.1/leaflet.js"></script>
+<link href="libs/leafletfix-1.0.0/leafletfix.css" rel="stylesheet" />
+<script src="libs/proj4-2.6.2/proj4.min.js"></script>
+<script src="libs/Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+<link href="libs/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-binding-2.1.1/leaflet.js"></script>
+<script src="libs/leaflet-providers-1.9.0/leaflet-providers_1.9.0.js"></script>
+<script src="libs/leaflet-providers-plugin-2.1.1/leaflet-providers-plugin.js"></script>
+
+
+<style type="text/css">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">TEST-Bookdown</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Movebank data update</a></li>
+<li class="chapter" data-level="2" data-path="time-since-last-check-in.html"><a href="time-since-last-check-in.html"><i class="fa fa-check"></i><b>2</b> Time since last check-in</a></li>
+<li class="chapter" data-level="3" data-path="costa-rica.html"><a href="costa-rica.html"><i class="fa fa-check"></i><b>3</b> Costa Rica</a></li>
+<li class="chapter" data-level="4" data-path="peru.html"><a href="peru.html"><i class="fa fa-check"></i><b>4</b> Peru</a></li>
+<li class="divider"></li>
+<li><a href="https://github.com/ChrisBeirne/test_report/" target="blank">TEST-Bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Test-Bookdown</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="time-since-last-check-in" class="section level1 hasAnchor">
+<h1><span class="header-section-number">Part 2</span> Time since last check-in<a href="time-since-last-check-in.html#time-since-last-check-in" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="time-since-last-check-in.html#cb1-1"></a><span class="co"># Last location and time since present</span></span>
+<span id="cb1-2"><a href="time-since-last-check-in.html#cb1-2"></a>dat<span class="op">$</span>diff_time &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">as.numeric</span>(<span class="kw">difftime</span>(t, dat<span class="op">$</span>timestamp, <span class="dt">units=</span><span class="st">&quot;hours&quot;</span>)),<span class="dv">1</span>)</span>
+<span id="cb1-3"><a href="time-since-last-check-in.html#cb1-3"></a></span>
+<span id="cb1-4"><a href="time-since-last-check-in.html#cb1-4"></a>last_obs &lt;-<span class="st"> </span>dat <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(animalName) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarize</span>(<span class="dt">hours_since_fix=</span><span class="kw">min</span>(diff_time))</span>
+<span id="cb1-5"><a href="time-since-last-check-in.html#cb1-5"></a></span>
+<span id="cb1-6"><a href="time-since-last-check-in.html#cb1-6"></a></span>
+<span id="cb1-7"><a href="time-since-last-check-in.html#cb1-7"></a>last_sum  &lt;-<span class="st"> </span>dat <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb1-8"><a href="time-since-last-check-in.html#cb1-8"></a><span class="st">  </span><span class="kw">group_by</span>(animalName) <span class="op">%&gt;%</span></span>
+<span id="cb1-9"><a href="time-since-last-check-in.html#cb1-9"></a><span class="st">  </span><span class="kw">slice</span>(<span class="kw">which.max</span>(timestamp))</span>
+<span id="cb1-10"><a href="time-since-last-check-in.html#cb1-10"></a><span class="kw">colnames</span>(last_sum)</span></code></pre></div>
+<pre><code>##  [1] &quot;tag_id&quot;                                       
+##  [2] &quot;sensor_type_id&quot;                               
+##  [3] &quot;algorithm_marked_outlier&quot;                     
+##  [4] &quot;barometric_pressure&quot;                          
+##  [5] &quot;data_decoding_software&quot;                       
+##  [6] &quot;eobs_activity&quot;                                
+##  [7] &quot;eobs_activity_samples&quot;                        
+##  [8] &quot;eobs_battery_voltage&quot;                         
+##  [9] &quot;eobs_fix_battery_voltage&quot;                     
+## [10] &quot;eobs_horizontal_accuracy_estimate&quot;            
+## [11] &quot;eobs_key_bin_checksum&quot;                        
+## [12] &quot;eobs_speed_accuracy_estimate&quot;                 
+## [13] &quot;eobs_start_timestamp&quot;                         
+## [14] &quot;eobs_status&quot;                                  
+## [15] &quot;eobs_temperature&quot;                             
+## [16] &quot;eobs_type_of_fix&quot;                             
+## [17] &quot;eobs_used_time_to_get_fix&quot;                    
+## [18] &quot;external_temperature&quot;                         
+## [19] &quot;gps_dop&quot;                                      
+## [20] &quot;gps_satellite_count&quot;                          
+## [21] &quot;ground_speed&quot;                                 
+## [22] &quot;heading&quot;                                      
+## [23] &quot;height_above_ellipsoid&quot;                       
+## [24] &quot;height_above_msl&quot;                             
+## [25] &quot;import_marked_outlier&quot;                        
+## [26] &quot;light_level&quot;                                  
+## [27] &quot;location_lat&quot;                                 
+## [28] &quot;location_long&quot;                                
+## [29] &quot;magnetic_field_raw_x&quot;                         
+## [30] &quot;magnetic_field_raw_y&quot;                         
+## [31] &quot;magnetic_field_raw_z&quot;                         
+## [32] &quot;orientation_quaternion_raw_w&quot;                 
+## [33] &quot;orientation_quaternion_raw_x&quot;                 
+## [34] &quot;orientation_quaternion_raw_y&quot;                 
+## [35] &quot;orientation_quaternion_raw_z&quot;                 
+## [36] &quot;tag_tech_spec&quot;                                
+## [37] &quot;timestamp&quot;                                    
+## [38] &quot;transmission_timestamp&quot;                       
+## [39] &quot;update_ts&quot;                                    
+## [40] &quot;activity_count&quot;                               
+## [41] &quot;gps_message_count&quot;                            
+## [42] &quot;gps_time_to_fix&quot;                              
+## [43] &quot;tag_voltage&quot;                                  
+## [44] &quot;eobs_acceleration_axes&quot;                       
+## [45] &quot;eobs_acceleration_sampling_frequency_per_axis&quot;
+## [46] &quot;eobs_accelerations_raw&quot;                       
+## [47] &quot;visible&quot;                                      
+## [48] &quot;deployment_id&quot;                                
+## [49] &quot;event_id&quot;                                     
+## [50] &quot;sensor_type&quot;                                  
+## [51] &quot;tag_local_identifier&quot;                         
+## [52] &quot;location_long.1&quot;                              
+## [53] &quot;location_lat.1&quot;                               
+## [54] &quot;optional&quot;                                     
+## [55] &quot;sensor&quot;                                       
+## [56] &quot;timestamps&quot;                                   
+## [57] &quot;trackId&quot;                                      
+## [58] &quot;comments&quot;                                     
+## [59] &quot;death_comments&quot;                               
+## [60] &quot;earliest_date_born&quot;                           
+## [61] &quot;exact_date_of_birth&quot;                          
+## [62] &quot;individual_id&quot;                                
+## [63] &quot;latest_date_born&quot;                             
+## [64] &quot;local_identifier&quot;                             
+## [65] &quot;nick_name&quot;                                    
+## [66] &quot;ring_id&quot;                                      
+## [67] &quot;sex&quot;                                          
+## [68] &quot;taxon_canonical_name&quot;                         
+## [69] &quot;timestamp_start&quot;                              
+## [70] &quot;timestamp_end&quot;                                
+## [71] &quot;number_of_events&quot;                             
+## [72] &quot;number_of_deployments&quot;                        
+## [73] &quot;sensor_type_ids&quot;                              
+## [74] &quot;taxon_detail&quot;                                 
+## [75] &quot;animalName&quot;                                   
+## [76] &quot;country&quot;                                      
+## [77] &quot;diff_time&quot;</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="time-since-last-check-in.html#cb3-1"></a>tmp &lt;-<span class="st"> </span>last_sum[, <span class="kw">c</span>(<span class="st">&quot;animalName&quot;</span>,<span class="st">&quot;country&quot;</span>, <span class="st">&quot;diff_time&quot;</span>)]</span>
+<span id="cb3-2"><a href="time-since-last-check-in.html#cb3-2"></a><span class="kw">colnames</span>(tmp)[<span class="kw">colnames</span>(tmp)<span class="op">==</span><span class="st">&quot;diff_time&quot;</span>] &lt;-<span class="st"> &quot;time_since_checkin&quot;</span></span>
+<span id="cb3-3"><a href="time-since-last-check-in.html#cb3-3"></a>tmp &lt;-<span class="st"> </span>tmp[<span class="kw">order</span>(tmp<span class="op">$</span>country, tmp<span class="op">$</span>time_since_checkin),]</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="time-since-last-check-in.html#cb4-1"></a>tmp <span class="op">%&gt;%</span></span>
+<span id="cb4-2"><a href="time-since-last-check-in.html#cb4-2"></a><span class="st">  </span><span class="kw">kbl</span>() <span class="op">%&gt;%</span></span>
+<span id="cb4-3"><a href="time-since-last-check-in.html#cb4-3"></a><span class="st">  </span><span class="kw">kable_styling</span>()</span></code></pre></div>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+animalName
+</th>
+<th style="text-align:left;">
+country
+</th>
+<th style="text-align:right;">
+time_since_checkin
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Attenborough_Sarcoramphus
+</td>
+<td style="text-align:left;">
+costa_rica
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Forsyth_Sarcoramphus
+</td>
+<td style="text-align:left;">
+costa_rica
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Fossey_Sarcoramphus
+</td>
+<td style="text-align:left;">
+costa_rica
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Goodall_Sarcoramphus
+</td>
+<td style="text-align:left;">
+costa_rica
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Ugalde_Sarcoramphus
+</td>
+<td style="text-align:left;">
+costa_rica
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Wilson_Sarcoramphus
+</td>
+<td style="text-align:left;">
+costa_rica
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+OC7_Sarcoramphus
+</td>
+<td style="text-align:left;">
+peru
+</td>
+<td style="text-align:right;">
+0.1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+OC10_Cathartes
+</td>
+<td style="text-align:left;">
+peru
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+OC3_Sarcoramphus
+</td>
+<td style="text-align:left;">
+peru
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+OC8_Cathartes
+</td>
+<td style="text-align:left;">
+peru
+</td>
+<td style="text-align:right;">
+2.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+OC9_Sarcoramphus
+</td>
+<td style="text-align:left;">
+peru
+</td>
+<td style="text-align:right;">
+52.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+OC1_Cathartes
+</td>
+<td style="text-align:left;">
+peru
+</td>
+<td style="text-align:right;">
+69.9
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="costa-rica.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": ["test-bookdown.pdf", "test-bookdown.epub"],
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "section"
+}
+});
+});
+</script>
+
+</body>
+
+</html>
