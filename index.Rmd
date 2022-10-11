@@ -31,7 +31,7 @@ plot(a)
 Can I load a library?
 
 ```{r}
-install.packages("leaflet")
+
 
 ```
 
