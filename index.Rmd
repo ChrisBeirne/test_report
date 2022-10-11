@@ -12,9 +12,7 @@ biblio-style: apalike
 link-citations: yes
 ---
 
-
 # Movebank data update
-*Last updated: `r as.POSIXct(format(Sys.time()),tz="America/Costa_Rica")`*
 
 ```{r, echo=F, message=F, include=F}
 library(move)
@@ -23,6 +21,7 @@ library(leaflet)
 library(sf)
 library(viridis)
 library(kableExtra)
+library(lubridate)
 
 loginStored <- movebankLogin(username="ChrisBeirne", password="EcuadorG11")
 
@@ -34,18 +33,24 @@ animals[duplicated(animals)==F,]
 animals <- animals[animals$sensor_type_id==653,]
 
 
+
+
 # Get last 2 weeks
-t <- strptime(Sys.time(),format="%Y-%m-%d %H:%M:%S", tz='UTC')
+t <- now("America/Costa_Rica")
 
 dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=t-as.difftime(14,units='days'),
-                       timestamp_end=t)
+                       timestamp_start=t-as.difftime(14,units='days'))
 
 # Convery move stack to dataframe
 dat <- as.data.frame(dat)
 
+# Convert dat to costa rica time
+dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
+
+
 ```
 
+*Last updated: `r now(tzone = "America/Costa_Rica")`*
 
 
 ```{r, include=F}
@@ -93,9 +98,11 @@ dat_shp  <- left_join(dat_shp,sp_dat)
 
 ```
 
-# Time since last check-in
+## Time since last check-in
 
-```{r}
+The data was requested at `r now(tzone = "America/Costa_Rica")`.
+
+```{r, echo=F}
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
@@ -107,9 +114,12 @@ last_sum  <- dat %>%
   slice(which.max(timestamp))
 colnames(last_sum)
 
-tmp <- last_sum[, c("animalName","country", "diff_time")]
-colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin"
-tmp <- tmp[order(tmp$country, tmp$time_since_checkin),]
+tmp <- last_sum[, c("animalName","country", "timestamp", "diff_time")]
+colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
+colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
+tmp <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
+
+
 ```
 
 
@@ -121,7 +131,7 @@ tmp %>%
 
 
 
-# Costa Rica
+## Costa Rica
 
 ```{r, echo=F}
 tmp <- dat[dat$country=="costa_rica",]
@@ -167,7 +177,7 @@ m <- leaflet() %>%
 m
 ```
 
-# Peru
+## Peru
 
 ```{r, echo=F}
 tmp <- dat[dat$country=="peru",]
