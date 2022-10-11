@@ -1,14 +1,13 @@
+name: scheduleRenderbook
 on:
   schedule:
-     - cron: "35 22 * * *"
+     - cron: "50 22 * * *"
 #  push:
 #     branches:
      # Default branches below
 #       - main
 #       - master
 
-
-name: renderbook
 
 jobs:
   bookdown:
