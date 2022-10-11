@@ -13,14 +13,16 @@ link-citations: yes
 ---
 
 
-# Welcome
+# Movebank data update
+*Last updated: `r as.POSIXct(format(Sys.time()),tz="America/Costa_Rica")`*
 
-```{r}
+```{r, echo=F, message=F, include=F}
 library(move)
 library(dplyr)
 library(leaflet)
 library(sf)
 library(viridis)
+library(kableExtra)
 
 loginStored <- movebankLogin(username="ChrisBeirne", password="EcuadorG11")
 
@@ -46,8 +48,8 @@ dat <- as.data.frame(dat)
 
 
 
-```{r}
-
+```{r, include=F}
+# Add the location data
 
 
 dat <- left_join(dat, animals[, c("tag_id", "animalName")])
@@ -89,7 +91,39 @@ sp_dat <- sp_dat[duplicated(sp_dat)==F,]
 # add back in the metadata
 dat_shp  <- left_join(dat_shp,sp_dat)
 
+```
 
+# Time since last check-in
+
+```{r}
+# Last location and time since present
+dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
+
+last_obs <- dat %>% group_by(animalName) %>% summarize(hours_since_fix=min(diff_time))
+
+
+last_sum  <- dat %>% 
+  group_by(animalName) %>%
+  slice(which.max(timestamp))
+colnames(last_sum)
+
+tmp <- last_sum[, c("animalName","country", "diff_time")]
+colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin"
+tmp <- tmp[order(tmp$country, tmp$time_since_checkin),]
+```
+
+
+```{r}
+tmp %>%
+  kbl() %>%
+  kable_styling()
+```
+
+
+
+# Costa Rica
+
+```{r, echo=F}
 tmp <- dat[dat$country=="costa_rica",]
 tmp_shp <- dat_shp[dat_shp$country=="costa_rica",]
 
@@ -117,7 +151,7 @@ m <- leaflet() %>%
                    stroke=F,
                    # Add a popup of the deployment code 
                    popup=paste(tmp$animalName, tmp$timestamp)) %>%
-  addPolylines(data=dat_shp, color = tmp_shp$colours, weight = 1, smoothFactor = 0.5,
+  addPolylines(data=tmp_shp, color = tmp_shp$colours, weight = 1, smoothFactor = 0.5,
               opacity = 1.0, fillOpacity = 0.5) %>% 
   # Add a legend explaining what is going on
   addLegend("bottomright", colors = col.cat,  labels = levels(tmp[,"animalName"]),
@@ -131,10 +165,50 @@ m <- leaflet() %>%
     options = layersControlOptions(collapsed = FALSE)
   )
 m
-
-
 ```
 
+# Peru
+
+```{r, echo=F}
+tmp <- dat[dat$country=="peru",]
+tmp_shp <- dat_shp[dat_shp$country=="peru",]
+
+
+# First lets choose a category to colour
+tmp[,"animalName"] <- factor(tmp[,"animalName"])
+tmp_shp$animalName <- factor(tmp_shp$animalName)
+
+col.cat <- turbo(length(levels(tmp[,"animalName"])))
+# Add it to the dataframe
+tmp$colours <- col.cat[tmp[,"animalName"]]
+tmp_shp$colours <- col.cat[tmp_shp$animalName]
 
 
 
+m <- leaflet() %>%
+  # Add a satellite image layer
+  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$Esri.WorldTopoMap, group="OS") %>%     
+  addCircleMarkers(lng=tmp$location_long, lat=tmp$location_lat,
+                   # Colour the markers depending on the 'feature type'
+                   color=tmp$colours,
+                   radius=3,
+                   stroke=F,
+                   # Add a popup of the deployment code 
+                   popup=paste(tmp$animalName, tmp$timestamp)) %>%
+  addPolylines(data=tmp_shp, color = tmp_shp$colours, weight = 1, smoothFactor = 0.5,
+              opacity = 1.0, fillOpacity = 0.5) %>% 
+  # Add a legend explaining what is going on
+  addLegend("bottomright", colors = col.cat,  labels = levels(tmp[,"animalName"]),
+            title = "Name",
+            labFormat = labelFormat(prefix = "$"),
+            opacity = 1
+  ) %>%
+  # add a layer control box to toggle between the layers
+  addLayersControl(
+    baseGroups = c("Simple", "Satellite", "OS"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+m
+```
