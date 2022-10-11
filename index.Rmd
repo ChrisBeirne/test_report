@@ -16,6 +16,10 @@ link-citations: yes
 # Welcome
 Hi, this is my test bookdown. Here a silly R script:
 
+
+I made this using this: https://lucacozzuto.medium.com/automatic-reports-with-bookdown-and-github-actions-3c19498394aa 
+
+
 Lets make a plot
 ```{r echo=FALSE, warning = FALSE, message=FALSE, fig.width=7}
 a<-read.csv("data.csv")
