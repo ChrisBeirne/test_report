@@ -1,12 +1,16 @@
 name: scheduleRenderbook
 on:     
-#  schedule:     # cant get a cron to work
-#     - cron: "* * * * *"
- push:
-    branches:
-     #Default branches below
-      - main
-      - master
+  schedule:     
+     - cron: "40 23 * * *"   # cant get a cron to work
+     - cron: "55 23 * * *"
+     - cron: "30 0 * * *"
+     - cron: "45 1 * * *"
+
+# push:
+#    branches:
+#     #Default branches below
+#      - main
+#      - master
 
 
 jobs:
