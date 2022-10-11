@@ -14,37 +14,125 @@ link-citations: yes
 
 
 # Welcome
-Hi, this is my test bookdown. Here a silly R script:
-
-
-I made this using this: https://lucacozzuto.medium.com/automatic-reports-with-bookdown-and-github-actions-3c19498394aa 
-
-
-This includes docker information too
-
-https://lalejini.com/2021/01/09/bookdown-autodeploy.html
-
-Lets make a plot
-```{r echo=FALSE, warning = FALSE, message=FALSE, fig.width=7}
-a<-read.csv("data.csv")
-plot(a)
-```
-
-
-
-Can I load a library?
 
 ```{r}
-
-
-```
-
-```{r}
+library(move)
+library(dplyr)
 library(leaflet)
+library(sf)
+library(viridis)
+
+loginStored <- movebankLogin(username="ChrisBeirne", password="EcuadorG11")
+
+# Get animals
+animals <-getMovebankAnimals(study=1573471517,login=loginStored)
+# For some reason they are duplicated
+animals[duplicated(animals)==F,]
+# They vary by the field "sensor_type_id"
+animals <- animals[animals$sensor_type_id==653,]
+
+
+# Get last 2 weeks
+t <- strptime(Sys.time(),format="%Y-%m-%d %H:%M:%S", tz='UTC')
+
+dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=t-as.difftime(14,units='days'),
+                       timestamp_end=t)
+
+# Convery move stack to dataframe
+dat <- as.data.frame(dat)
+
+```
+
+
+
+```{r}
+
+
+
+dat <- left_join(dat, animals[, c("tag_id", "animalName")])
+# Sort the names out
+
+dat$animalName <- sub('\\_.*', '', dat$animalName)
+# Add in the taxonomic group
+dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
+
+# Add a country column
+dat$country <- dat$location_lat<0
+dat$country[dat$country==T] <- "peru"
+dat$country[dat$country==F] <- "costa_rica"
+#table(dat$country)
+
+
+
+# Costa rica
+
+# Convert to shapefiles
+dat <- dat[order(dat$animalName),]
+
+
+lfc <- do.call(st_sfc,
+              lapply(split(dat, dat$animalName),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+dat_shp <- st_sf(data.frame(animalName=levels(factor(dat[,"animalName"])), geom=lfc))
+
+#
+#plot(dat$location_long[dat$country=="costa_rica"], dat$location_lat[dat$country=="costa_rica"])
+#plot(st_geometry(dat_shp), add=T)
+
+
+
+
+sp_dat <- dat[,c("animalName",    "country", "taxon_canonical_name" )]
+sp_dat <- sp_dat[duplicated(sp_dat)==F,]
+
+# add back in the metadata
+dat_shp  <- left_join(dat_shp,sp_dat)
+
+
+tmp <- dat[dat$country=="costa_rica",]
+tmp_shp <- dat_shp[dat_shp$country=="costa_rica",]
+
+
+# First lets choose a category to colour
+tmp[,"animalName"] <- factor(tmp[,"animalName"])
+tmp_shp$animalName <- factor(tmp_shp$animalName)
+
+col.cat <- turbo(length(levels(tmp[,"animalName"])))
+# Add it to the dataframe
+tmp$colours <- col.cat[tmp[,"animalName"]]
+tmp_shp$colours <- col.cat[tmp_shp$animalName]
+
+
+
 m <- leaflet() %>%
-  addTiles() %>%  # Add default OpenStreetMap map tiles
-  addMarkers(lng=174.768, lat=-36.852, popup="The birthplace of R")
-m  # Print the map
+  # Add a satellite image layer
+  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$Esri.WorldTopoMap, group="OS") %>%     
+  addCircleMarkers(lng=tmp$location_long, lat=tmp$location_lat,
+                   # Colour the markers depending on the 'feature type'
+                   color=tmp$colours,
+                   radius=3,
+                   stroke=F,
+                   # Add a popup of the deployment code 
+                   popup=paste(tmp$animalName, tmp$timestamp)) %>%
+  addPolylines(data=dat_shp, color = tmp_shp$colours, weight = 1, smoothFactor = 0.5,
+              opacity = 1.0, fillOpacity = 0.5) %>% 
+  # Add a legend explaining what is going on
+  addLegend("bottomright", colors = col.cat,  labels = levels(tmp[,"animalName"]),
+            title = "Name",
+            labFormat = labelFormat(prefix = "$"),
+            opacity = 1
+  ) %>%
+  # add a layer control box to toggle between the layers
+  addLayersControl(
+    baseGroups = c("Simple", "Satellite", "OS"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+m
+
+
 ```
 
 
