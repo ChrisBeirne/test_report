@@ -16,7 +16,7 @@ link-citations: yes
 # Welcome
 Hi, this is my test bookdown. Here a silly R script:
 
-## A plot
+Lets make a plot
 ```{r echo=FALSE, warning = FALSE, message=FALSE, fig.width=7}
 a<-read.csv("data.csv")
 plot(a)
