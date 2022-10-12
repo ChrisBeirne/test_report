@@ -2,12 +2,11 @@ name: scheduleRenderbook
 on:     
   schedule:     
      - cron: "10 10 * * *"  
-
-# push:
-#    branches:
-#     #Default branches below
-#      - main
-#      - master
+ push:
+    branches:
+     #Default branches below
+      - main
+      - master
 
 
 jobs:

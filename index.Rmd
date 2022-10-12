@@ -22,6 +22,7 @@ library(sf)
 library(viridis)
 library(kableExtra)
 library(lubridate)
+library(plotly)
 
 loginStored <- movebankLogin(username="ChrisBeirne", password="EcuadorG11")
 
@@ -37,9 +38,11 @@ animals <- animals[animals$sensor_type_id==653,]
 
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
+start_t <- t-as.difftime(14,units='days')
+
 
 dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=t-as.difftime(14,units='days'))
+                       timestamp_start=start_t)
 
 # Convery move stack to dataframe
 dat <- as.data.frame(dat)
@@ -50,7 +53,7 @@ dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
 
 ```
 
-*Last updated: `r now(tzone = "America/Costa_Rica")`*
+*Last data request: `r now(tzone = "America/Costa_Rica")`*
 
 
 ```{r, include=F}
@@ -63,6 +66,7 @@ dat <- left_join(dat, animals[, c("tag_id", "animalName")])
 dat$animalName <- sub('\\_.*', '', dat$animalName)
 # Add in the taxonomic group
 dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
+animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ .*', '', animals$taxon_canonical_name))
 
 # Add a country column
 dat$country <- dat$location_lat<0
@@ -117,18 +121,113 @@ last_sum  <- dat %>%
 tmp <- last_sum[, c("animalName","country", "timestamp", "diff_time")]
 colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
 colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
-tmp <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
+check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
 
 
 ```
 
 
-```{r}
-tmp %>%
+```{r, echo=F, message=F, warning=F}
+tmp_col <- check_in_summary$time_since_checkin_h
+tmp_col[tmp_col<12]<- 12
+
+check_in_summary %>%
+  kbl() %>%
+  kable_styling()  %>%
+    column_spec(4, color = "white",
+              background = spec_color(tmp_col, begin=0,end = 0.7, direction=-1,
+                                      option="D", scale_from = c(12,120)))
+
+
+### Add additional data shown later
+check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
+
+### Total locations Mean eobs battery power, eobs accuracy
+tmp_sum <- dat %>% group_by(animalName) %>% summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
+#colnames(dat)
+
+check_in_summary <- left_join(check_in_summary, tmp_sum)
+check_in_summary$locs_per_day <- check_in_summary$total_obs/as.numeric(check_in_summary$duration)
+
+```
+
+**Animals not seen for >14 days**
+
+```{r, echo=F}
+tmp2 <- animals[!(animals$animalName %in% tmp$animalName),]
+tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, units="days")),1)
+tmp2 <- tmp2[order(tmp2$days_since_check_in),]
+row.names(tmp2) <- 1:nrow(tmp2)
+
+tmp2[, c("animalName", "timestamp_end", "days_since_check_in")] %>%
   kbl() %>%
   kable_styling()
+
 ```
 
+Average number of locations per day (last 14 days):
+
+```{r, echo=F}
+#colnames(check_in_summary)
+
+xform <- list(categoryorder = "array",
+              categoryarray = c(check_in_summary$animalName))
+
+cols<- c("#fc8d59", "#99d594")
+fig <- plot_ly(check_in_summary, x = ~animalName, y = ~locs_per_day, type = 'bar',
+
+        marker = list(color = cols[as.factor(check_in_summary$country)]),
+        text=check_in_summary$country,
+        hoverinfo='text')
+
+fig <- fig %>% layout(title = "Locations per day",
+                      xaxis = xform,
+                      xaxis = list(title = ""),
+                      yaxis = list(title = ""))
+
+
+ 
+fig
+```
+
+Average battery level (last 14 days):
+
+
+```{r, echo=F, warning=FALSE}
+fig <- plot_ly(check_in_summary, x = ~animalName, y = ~mean_batt, type = 'bar',
+
+        marker = list(color = cols[as.factor(check_in_summary$country)]),
+        text=check_in_summary$country,
+        hoverinfo='text')
+
+fig <- fig %>% layout(title = "Battery power",
+                      xaxis = xform,
+                      xaxis = list(title = ""),
+                      yaxis = list(title = ""))
+
+
+
+fig
+```
+
+Average horizontal location accuracy (last 14 days):
+
+```{r, echo=F, warning=F}
+fig <- plot_ly(check_in_summary, x = ~animalName, y = ~loc_accuracy, type = 'bar',
+
+        marker = list(color = cols[as.factor(check_in_summary$country)]),
+        text=check_in_summary$country,
+        hoverinfo='text')
+
+fig <- fig %>% layout(title = "Location accuracy (m)",
+                      xaxis = xform,
+                      xaxis = list(title = ""),
+                      yaxis = list(title = ""))
+
+
+
+fig
+```
 
 
 **Costa Rica**
@@ -147,8 +246,11 @@ col.cat <- turbo(length(levels(tmp[,"animalName"])))
 tmp$colours <- col.cat[tmp[,"animalName"]]
 tmp_shp$colours <- col.cat[tmp_shp$animalName]
 
+```
 
+We currently have `r length(unique(tmp$animalName))` vultures transmitting data in Costa Rica:
 
+```{r, echo=F}
 m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
@@ -177,6 +279,50 @@ m <- leaflet() %>%
 m
 ```
 
+*Location activity over the last 14 days*
+
+The plot below shows a point each time we have a location at a given time.
+
+```{r, echo=F}
+library(plotly)
+yform <- list(categoryorder = "array",
+              categoryarray = unique(tmp$animalName))
+
+
+fig <- plot_ly(x = tmp$timestamp, y = tmp$animalName,type="scatter",
+               height=1000, text=tmp$animalName, hoverinfo='text',
+               mode   = 'markers',
+               marker = list(size = 5,
+                             color = 'rgba(50, 100, 255, .2)',
+                             line = list(color = 'rgba(0, 0, 0, 0)',
+                                         width = 0))) %>% 
+              layout(yaxis = yform)
+fig
+
+```
+
+**Daily schedule**
+
+```{r, echo=F, warning=F, message=F}
+
+tmp$hour <- as.numeric(substr(tmp$timestamp,12,13))
+tmp$hour <- factor(tmp$hour, levels=0:23)
+tmp$animalName <- as.factor(tmp$animalName)
+tmp2 <- tmp %>% group_by(animalName, hour, .drop=F) %>% summarize(obs=n())
+
+
+fig <- plot_ly(tmp2, x = ~hour, y = ~obs, name = tmp2$animalName, type = 'scatter', mode = 'lines',split = ~animalName) 
+fig <- fig %>%  layout(title = "Hourly locations",
+                      xaxis = xform,
+                      xaxis = list(title = ""),
+                      yaxis = list(title = "Number of locations"))
+
+fig
+
+```
+
+
+
 **Peru**
 
 ```{r, echo=F}
@@ -193,8 +339,13 @@ col.cat <- turbo(length(levels(tmp[,"animalName"])))
 tmp$colours <- col.cat[tmp[,"animalName"]]
 tmp_shp$colours <- col.cat[tmp_shp$animalName]
 
+```
 
 
+We currently have `r length(unique(tmp$animalName))` vultures transmitting data in Peru:
+
+
+```{r, echo=F}
 m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
@@ -221,4 +372,49 @@ m <- leaflet() %>%
     options = layersControlOptions(collapsed = FALSE)
   )
 m
+```
+
+
+*Location activity over the last 14 days*
+
+The plot below shows a point each time we have a location at a given time.
+
+```{r, echo=F}
+library(plotly)
+yform <- list(categoryorder = "array",
+              categoryarray = unique(tmp$animalName))
+
+
+fig <- plot_ly(x = tmp$timestamp, y = tmp$animalName,type="scatter",
+               height=1000, text=tmp$animalName, hoverinfo='text',
+               mode   = 'markers',
+               marker = list(size = 5,
+                             color = 'rgba(50, 100, 255, .2)',
+                             line = list(color = 'rgba(0, 0, 0, 0)',
+                                         width = 0))) %>% 
+              layout(yaxis = yform)
+fig
+
+```
+
+**Daily schedule**
+
+```{r, echo=F, warning=F, message=F}
+
+tmp$hour <- as.numeric(substr(tmp$timestamp,12,13))
+tmp$hour <- factor(tmp$hour, levels=0:23)
+
+tmp$animalName <- as.factor(tmp$animalName)
+
+tmp2 <- tmp %>% group_by(animalName, hour, .drop=F) %>% summarize(obs=n())
+
+
+fig <- plot_ly(tmp2, x = ~hour, y = ~obs, name = tmp2$animalName, type = 'scatter', mode = 'lines',split = ~animalName) 
+fig <- fig %>%  layout(title = "Hourly locations",
+                      xaxis = xform,
+                      xaxis = list(title = ""),
+                      yaxis = list(title = "Number of locations"))
+
+fig
+
 ```
