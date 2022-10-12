@@ -37,6 +37,8 @@ jobs:
         run: Rscript -e "install.packages('kableExtra')"
       - name: Install lubridate
         run: Rscript -e "install.packages('lubridate')"
+      - name: Install plotly
+        run: Rscript -e "install.packages('plotly')"
       - name: Render Book
         run: Rscript -e 'bookdown::render_book("index.Rmd")'
       - uses: actions/upload-artifact@v2
