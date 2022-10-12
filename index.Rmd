@@ -1,8 +1,8 @@
 ---
-title: "Test-Bookdown"
+title: "Osa Conservation: Tracker Checker"
 
 author:
-  - ChrisB
+  - Chris Beirne
 
 
 site: bookdown::test-bookdown
@@ -12,7 +12,7 @@ biblio-style: apalike
 link-citations: yes
 ---
 
-# Movebank data update
+# Tracker status checker
 
 ```{r, echo=F, message=F, include=F}
 library(move)
@@ -98,11 +98,11 @@ dat_shp  <- left_join(dat_shp,sp_dat)
 
 ```
 
-## Time since last check-in
+**Time since last check-in**
 
 The data was requested at `r now(tzone = "America/Costa_Rica")`.
 
-```{r, echo=F}
+```{r, echo=F, include=F}
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
@@ -112,7 +112,7 @@ last_obs <- dat %>% group_by(animalName) %>% summarize(hours_since_fix=min(diff_
 last_sum  <- dat %>% 
   group_by(animalName) %>%
   slice(which.max(timestamp))
-colnames(last_sum)
+
 
 tmp <- last_sum[, c("animalName","country", "timestamp", "diff_time")]
 colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
@@ -131,7 +131,7 @@ tmp %>%
 
 
 
-## Costa Rica
+**Costa Rica**
 
 ```{r, echo=F}
 tmp <- dat[dat$country=="costa_rica",]
@@ -177,7 +177,7 @@ m <- leaflet() %>%
 m
 ```
 
-## Peru
+**Peru**
 
 ```{r, echo=F}
 tmp <- dat[dat$country=="peru",]
