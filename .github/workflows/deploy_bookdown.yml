@@ -1,12 +1,9 @@
 name: scheduleRenderbook
 on:     
+  push:
   schedule:     
      - cron: "10 10 * * *"  
- push:
-    branches:
-     #Default branches below
-      - main
-      - master
+
 
 
 jobs:
