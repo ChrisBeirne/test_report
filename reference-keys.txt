@@ -1,4 +1,1 @@
-movebank-data-update
-time-since-last-check-in
-costa-rica
-peru
+tracker-status-checker
