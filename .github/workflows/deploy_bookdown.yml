@@ -40,6 +40,9 @@ jobs:
       - name: Install plotly
         run: Rscript -e "install.packages('plotly')"
       - name: Render Book
+        env: 
+          MOVE_USE: ${{ secrets.MOVEBANK_USERNAME }}
+          MOVE_PASS: ${{ secrets.MOVEBANK_PASSWORD }}
         run: Rscript -e 'bookdown::render_book("index.Rmd")'
       - uses: actions/upload-artifact@v2
         with:

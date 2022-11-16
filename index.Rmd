@@ -14,6 +14,8 @@ link-citations: yes
 
 # Tracker status checker
 
+This document summarize the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
+
 ```{r, echo=F, message=F, include=F}
 library(move)
 library(dplyr)
@@ -24,7 +26,14 @@ library(kableExtra)
 library(lubridate)
 library(plotly)
 
-loginStored <- movebankLogin(username="ChrisBeirne", password="EcuadorG11")
+
+
+# Import passcodes
+#MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
+#MOVE_USE <- Sys.getenv("MOVEBANK_USERNAME")
+
+loginStored <- movebankLogin(username=MOVE_USE, 
+                             password=MOVE_PASS)
 
 # Get animals
 animals <-getMovebankAnimals(study=1573471517,login=loginStored)
@@ -32,9 +41,6 @@ animals <-getMovebankAnimals(study=1573471517,login=loginStored)
 animals[duplicated(animals)==F,]
 # They vary by the field "sensor_type_id"
 animals <- animals[animals$sensor_type_id==653,]
-
-
-
 
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
@@ -44,17 +50,21 @@ start_t <- t-as.difftime(14,units='days')
 dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
 
+# all data
+dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
+
 # Convery move stack to dataframe
 dat <- as.data.frame(dat)
 
 # Convert dat to costa rica time
 dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
-
+dat$tag_id
 
 ```
 
 *Last data request: `r now(tzone = "America/Costa_Rica")`*
 
+The project currently contains `r length(unique(dat$tag_id))` active tag deployments (defined as being active within the last 14 days). 
 
 ```{r, include=F}
 # Add the location data
@@ -103,8 +113,6 @@ dat_shp  <- left_join(dat_shp,sp_dat)
 ```
 
 **Time since last check-in**
-
-The data was requested at `r now(tzone = "America/Costa_Rica")`.
 
 ```{r, echo=F, include=F}
 # Last location and time since present
@@ -164,6 +172,40 @@ tmp2[, c("animalName", "timestamp_end", "days_since_check_in")] %>%
   kable_styling()
 
 ```
+
+#### Last 24 hours
+
+```{r, echo=F}
+dat_day <- dat[substr(dat$timestamp,1,10) == substr(t,1,10),]
+```
+
+In the last 24 hours we have received `r nrow(dat_day)` observations from `r length(unique(dat_day$tag_id))` individuals.
+
+```{r, echo=F}
+# #colnames(check_in_summary)
+# 
+# xform <- list(categoryorder = "array",
+#               categoryarray = c(check_in_summary$animalName))
+# 
+# cols<- c("#fc8d59", "#99d594")
+# fig <- plot_ly(check_in_summary, x = ~animalName, y = ~locs_per_day, type = 'bar',
+# 
+#         marker = list(color = cols[as.factor(check_in_summary$country)]),
+#         text=check_in_summary$country,
+#         hoverinfo='text')
+# 
+# fig <- fig %>% layout(title = "Locations per day",
+#                       xaxis = xform,
+#                       xaxis = list(title = ""),
+#                       yaxis = list(title = ""))
+# 
+# 
+#  
+# fig
+```
+
+
+#### 14-day summaries
 
 Average number of locations per day (last 14 days):
 
@@ -418,3 +460,10 @@ fig <- fig %>%  layout(title = "Hourly locations",
 fig
 
 ```
+
+# Last 48 Hours
+
+The following maps relate to just the last 48 hours of data. Use this to find clusters and locations. 
+
+
+
