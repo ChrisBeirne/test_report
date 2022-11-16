@@ -29,8 +29,8 @@ library(plotly)
 
 
 # Import passcodes
-#MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
-#MOVE_USE <- Sys.getenv("MOVEBANK_USERNAME")
+MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
+MOVE_USE <- Sys.getenv("MOVEBANK_USERNAME")
 
 loginStored <- movebankLogin(username=MOVE_USE, 
                              password=MOVE_PASS)
