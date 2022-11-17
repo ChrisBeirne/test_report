@@ -399,13 +399,13 @@ fig
 
 ```
 
-# Last 48 Hours
+# Last 48 Hours  {.tabset}
 
 The following maps relate to just the last 48 hours of data. Use this to find interesting clusters and their associated coordinates. 
 
-**Costa Rica**
+### Costa Rica
 
-```{r, echo=F}
+```{r, echo=F, message=F, warning=F}
 # Subset to 48 hours
 tmp_cr_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(ymd_hms(animals$timestamp_end))-48*60*60,]
 
@@ -471,9 +471,9 @@ m
 ```
 
 
-**Peru**
+### Peru
 
-```{r, echo=F}
+```{r, echo=F, message=F, warning=F}
 # Subset to 48 hours
 tmp_peru_48 <- dat[dat$country=="peru" & dat$timestamp > max(ymd_hms(animals$timestamp_end))-48*60*60,]
 
@@ -815,19 +815,11 @@ rFunction = function(meth="buff", rad=NULL, dur=NULL, dur_unit="days", maxgap=1,
 }
 ```
 
-
-
-
-## Peru
-
-### Potential interactions
-
-
-# Hardware function 
+# Hardware function and settings
 
 The following plots track how the tags are performing in the field. 
 
-##  Battery status
+###  Battery status
 Average battery level (last 14 days):
 
 ```{r, echo=F, warning=FALSE}
@@ -850,7 +842,7 @@ fig
 ```
 
 
-##  Location accuracy 
+###  Location accuracy 
 
 Average horizontal location accuracy (last 14 days):
 
@@ -872,7 +864,7 @@ fig
 ```
 
 
-## Reporting frequencies
+### Reporting frequencies
 
 Average number of locations per day (last 14 days):
 
