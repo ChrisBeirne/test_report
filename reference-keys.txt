@@ -1,1 +1,9 @@
 tracker-status-checker
+last-48-hours
+peru
+potential-interactions
+hardware-function
+battery-status
+location-accuracy
+reporting-frequencies
+temporal-activity
