@@ -1,8 +1,8 @@
 tracker-status-checker
 last-48-hours
+costa-rica
 peru
-potential-interactions
-hardware-function
+hardware-function-and-settings
 battery-status
 location-accuracy
 reporting-frequencies
