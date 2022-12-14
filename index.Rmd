@@ -17,6 +17,7 @@ link-citations: yes
 This document summarize the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
 
 ```{r, echo=F, message=F, include=F}
+library(rgdal)
 library(move)
 library(dplyr)
 library(leaflet)
