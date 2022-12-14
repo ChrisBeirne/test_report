@@ -24,7 +24,7 @@ jobs:
       - name: Install rmarkdown
         run: Rscript -e 'install.packages(c("rmarkdown","bookdown"))'
       - name: Install rgdal
-        run: Rscript -e "install.packages('rgdal', type="mac.binary")"  
+        run: Rscript -e "install.packages('rgdal', type='binary')"  
       - name: Install units
         run: Rscript -e "install.packages('units')"
       - name: Install leaflet
