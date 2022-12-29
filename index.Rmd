@@ -16,7 +16,7 @@ link-citations: yes
 
 This document summarize the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
 
-```{r, echo=F, message=F, include=F}
+```{r c01, echo=F, message=F, include=F}
 library(rgdal)
 library(move)
 library(dplyr)
@@ -67,7 +67,7 @@ dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
 
 The project currently contains `r length(unique(dat$tag_id))` active tag deployments (defined as being active within the last 14 days). 
 
-```{r, include=F}
+```{r  c02, include=F}
 # Add the location data
 
 
@@ -115,7 +115,7 @@ dat_shp  <- left_join(dat_shp,sp_dat)
 
 **Time since last check-in**
 
-```{r, echo=F, include=F}
+```{r  c03, echo=F, include=F}
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
@@ -135,7 +135,7 @@ check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
 ```
 
 
-```{r, echo=F, message=F, warning=F}
+```{r  c04, echo=F, message=F, warning=F}
 tmp_col <- check_in_summary$time_since_checkin_h
 tmp_col[tmp_col<12]<- 12
 
@@ -161,11 +161,15 @@ check_in_summary$locs_per_day <- check_in_summary$total_obs/as.numeric(check_in_
 
 **Animals not seen for >14 days**
 
-```{r, echo=F}
+```{r  c05, echo=F}
 tmp2 <- animals[!(animals$animalName %in% tmp$animalName),]
+tmp2$timestamp_end <- with_tz(tmp2$timestamp_end, tzone = "America/Costa_Rica")
+str(tmp2)
 tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, units="days")),1)
 tmp2 <- tmp2[order(tmp2$days_since_check_in),]
 #row.names(tmp2) <- 1:nrow(tmp2)
+
+
 
 tmp2[, c("animalName", "timestamp_end", "days_since_check_in")] %>%
   kbl() %>%
