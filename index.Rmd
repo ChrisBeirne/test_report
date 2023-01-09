@@ -164,7 +164,7 @@ check_in_summary$locs_per_day <- check_in_summary$total_obs/as.numeric(check_in_
 ```{r  c05, echo=F}
 tmp2 <- animals[!(animals$animalName %in% tmp$animalName),]
 tmp2$timestamp_end <- with_tz(tmp2$timestamp_end, tzone = "America/Costa_Rica")
-str(tmp2)
+#str(tmp2)
 tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, units="days")),1)
 tmp2 <- tmp2[order(tmp2$days_since_check_in),]
 #row.names(tmp2) <- 1:nrow(tmp2)
