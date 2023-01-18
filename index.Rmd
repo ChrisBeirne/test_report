@@ -4,7 +4,6 @@ title: "Osa Conservation: Tracker Checker"
 author:
   - Chris Beirne
 
-
 site: bookdown::test-bookdown
 output: bookdown::gitbook
 documentclass: book
@@ -69,8 +68,6 @@ The project currently contains `r length(unique(dat$tag_id))` active tag deploym
 
 ```{r  c02, include=F}
 # Add the location data
-
-
 dat <- left_join(dat, animals[, c("tag_id", "animalName")])
 # Sort the names out
 
@@ -208,7 +205,7 @@ fig %>% add_pie(data = count(check_in_summary, taxon_canonical_name), labels = ~
 
 **Maps**
 
-From the last 14 days:
+Last 14 days:
 
 *Costa Rica*
 
@@ -280,14 +277,30 @@ tmp_cr$hour <- factor(tmp_cr$hour, levels=0:23)
 tmp_cr$animalName <- as.factor(tmp_cr$animalName)
 tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% summarize(obs=n())
 
+# Tag activity - account for survey effort
+tmp_act_cr <- tmp_cr %>% group_by(animalName, .drop=F) %>% summarize(start=min(timestamp), end=max(timestamp))
 
-fig <- plot_ly(tmp_cr2, x = ~hour, y = ~obs, name = tmp_cr2$animalName, type = 'scatter', mode = 'lines',split = ~animalName) 
-fig <- fig %>%  layout(title = "Hourly locations",
+tmp_act_cr$duration <- as.numeric(difftime(tmp_act_cr$end, tmp_act_cr$start))
+
+tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% summarize(obs=n())
+
+tmp_cr2 <- left_join(tmp_cr2, tmp_act_cr)
+
+tmp_cr2$sampling_rate <- tmp_cr2$obs/tmp_cr2$duration
+
+# Add in the colour code
+cols <- col.cat[1:length(levels(tmp_cr2$animalName))]
+
+
+fig <- plot_ly(tmp_cr2, x = ~hour, y = ~sampling_rate, name = tmp_cr2$animalName, type = 'scatter', mode = 'lines',split = ~animalName,color=~animalName, colors=cols) 
+fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
                       xaxis = xform,
                       xaxis = list(title = ""),
-                      yaxis = list(title = "Number of locations"))
+                      yaxis = list(title = "Locations per hour"))
 
 fig
+
+
 
 ```
 
@@ -451,15 +464,26 @@ m <- leaflet() %>%
   for (i in seq(along=ids))
     {
       m <- m %>%
-        addPolylines(data = tmp_cr_48_shp[i,], color = tmp_cr_48_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
+        addPolylines(data = tmp_cr_48_shp[i,], color = tmp_cr_48_shp$colours[i], group = ids[i], weight=2,opacity=0.5)         %>%
+        
+        # All points
         addCircleMarkers(lng=tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]],
                          lat=tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]], 
-                         popup=paste(tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]]),
-                         fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F) %>%
-        addCircleMarkers(lng=last(tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]]),
+                         
+                         popup=paste(tmp_cr_48$local_identifier[tmp_cr_48$animalName==ids[i]],
+                                     "<br>Time:",tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]],
+                                     "<br>Long:",tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]],
+                                     "<br>Lat:",tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]]),
+                         
+                         fillOpacity = 0.3, opacity = 0.5, radius=3, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F) %>%
+        
+        # The last point
+        addMarkers(lng=last(tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]]),
                          lat=last(tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]]), 
-                         popup=paste(last(tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]])),
-                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F)
+                         popup=paste(last(tmp_cr_48$local_identifier[tmp_cr_48$animalName==ids[i]]),
+                                     "<br>Time:",last(tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]]),
+                                     "<br>Long:",last(tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]]),
+                                     "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]]))) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
@@ -468,7 +492,7 @@ m <- leaflet() %>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
-        baseGroups = c("OS", "Simple", "Satellite"),
+        baseGroups = c("Simple", "OS", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
       ) 
@@ -536,7 +560,7 @@ m <- leaflet() %>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
-        baseGroups = c("OS", "Simple", "Satellite"),
+        baseGroups = c("Simple", "OS", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
       ) 
