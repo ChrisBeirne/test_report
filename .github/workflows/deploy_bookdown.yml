@@ -43,8 +43,8 @@ jobs:
         run: Rscript -e "install.packages('lubridate')"
       - name: Install plotly
         run: Rscript -e "install.packages('plotly')"
-      - name: Install raster
-        run: Rscript -e "install.packages('raster')"
+    #  - name: Install raster
+    #    run: Rscript -e "install.packages('raster')"
       - name: Render Book
         env: 
           MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
