@@ -44,7 +44,7 @@ jobs:
       - name: Install plotly
         run: Rscript -e "install.packages('plotly')"
       - name: Install raster
-        run: Rscript -e "install.packages('raster')"
+        run: Rscript -e "install.packages('raster', type='mac.binary')"
       - name: Render Book
         env: 
           MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
