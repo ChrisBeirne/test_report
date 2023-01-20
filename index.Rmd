@@ -235,7 +235,7 @@ m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$Esri.WorldTopoMap, group="OS") #%>%     
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
   for (i in seq(along=ids))
     {
@@ -330,7 +330,7 @@ m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$Esri.WorldTopoMap, group="OS") %>%     
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>%     
   addCircleMarkers(lng=tmp_peru$location_long, lat=tmp_peru$location_lat,
                    # Colour the markers depending on the 'feature type'
                    color=tmp_peru$colours,
@@ -364,7 +364,7 @@ m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$Esri.WorldTopoMap, group="OS") #%>%     
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
   for (i in seq(along=ids))
     {
@@ -459,7 +459,7 @@ m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$Esri.WorldTopoMap, group="OS") #%>%     
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
   for (i in seq(along=ids))
     {
@@ -538,7 +538,7 @@ m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$Esri.WorldTopoMap, group="OS") #%>%     
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
   for (i in seq(along=ids))
     {
