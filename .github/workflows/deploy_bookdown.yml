@@ -45,8 +45,15 @@ jobs:
         run: Rscript -e "install.packages('plotly')"
       - name: Install raster
         run: Rscript -e "install.packages('raster', type='mac.binary')"
+      - name: Install googledrive
+        run: Rscript -e "install.packages('googledrive')"
+      - name: Install purrr
+        run: Rscript -e "install.packages('purrr')"
+      - name: Install readxl
+        run: Rscript -e "install.packages('readxl')"
       - name: Render Book
         env: 
+          GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
           MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
           MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
         run: Rscript -e 'bookdown::render_book("index.Rmd")'

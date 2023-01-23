@@ -26,6 +26,22 @@ library(viridis)
 library(kableExtra)
 library(lubridate)
 library(plotly)
+## Load packages for google drive ----
+library(googledrive)
+library(purrr)
+library(readxl)
+options(googledrive_quiet = TRUE)
+
+# For when the trapping effort file is sorted
+# googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTHENTICATION_CREDENTIALS"))
+# 
+# ## Find Google Drive folder 'Centre Circle Data & Info'
+# data_folder <- drive_ls(path = "08 Databases + Analysis")
+# data_path <- "data"
+# dir.create(data_path) 
+# drive_download(as_id("14hLi94W4WbDn6jdXahJMnxllOgLpZh-PpIBOWqt9jlc"),
+#                path="data/2_vulture_trap_deployments.xlsx")
+#capture_dat <- read_excel("data/2_vulture_trap_deployments.xlsx")
 
 
 
