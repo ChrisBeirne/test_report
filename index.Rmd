@@ -37,7 +37,7 @@ options(googledrive_quiet = TRUE)
 # 
 # ## Find Google Drive folder 'Centre Circle Data & Info'
 # data_folder <- drive_ls(path = "08 Databases + Analysis")
-# data_path <- "data"
+# data_path <- "data" 
 # dir.create(data_path) 
 # drive_download(as_id("14hLi94W4WbDn6jdXahJMnxllOgLpZh-PpIBOWqt9jlc"),
 #                path="data/2_vulture_trap_deployments.xlsx")
