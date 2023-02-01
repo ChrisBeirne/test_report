@@ -622,7 +622,6 @@ sub_dat$speed <- unlist(lapply(speed(sub_dat),c, NA ))
 sub_dat_df <- as.data.frame(sub_dat)
 sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "animalName")])
 
-<<<<<<< HEAD
 
 
 sub_dat_df <- sub_dat_df[order(sub_dat_df$animalName),]
@@ -631,7 +630,7 @@ lfc <- do.call(st_sfc,
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
 dat_shp <- st_sf(data.frame(animalName=levels(factor(sub_dat_df[,"animalName"])), geom=lfc))
 
-plot(st_geometry(dat_shp))
+#plot(st_geometry(dat_shp))
 
 #
 #plot(dat$location_long[dat$country=="costa_rica"], dat$location_lat[dat$country=="costa_rica"])
@@ -652,37 +651,8 @@ dat_shp <- left_join(dat_shp, cr_cols)
 #plot(sub_dat, col=as.numeric(sub_dat$ground_speed<1)+1)
 #plot(sub_dat[sub_dat$ground_speed<1,], add=T)
 
-=======
 
 
-sub_dat_df <- sub_dat_df[order(sub_dat_df$animalName),]
-lfc <- do.call(st_sfc,
-              lapply(split(sub_dat_df, sub_dat_df$animalName),
-                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-dat_shp <- st_sf(data.frame(animalName=levels(factor(sub_dat_df[,"animalName"])), geom=lfc))
-
-plot(st_geometry(dat_shp))
-
-#
-#plot(dat$location_long[dat$country=="costa_rica"], dat$location_lat[dat$country=="costa_rica"])
-#plot(st_geometry(dat_shp), add=T)
-
-# add back in the metadata
-dat_shp  <- left_join(dat_shp,sp_dat)
-
-# Bring in the colours from earlier
-cr_cols <- tmp_cr[, c("animalName", "colours")]
-cr_cols <- cr_cols[duplicated(cr_cols)==F,]
-dat_shp <- left_join(dat_shp, cr_cols)
-# Make shapefile of the tracks to add later
-
-#plot(sub_dat_df$ground_speed, sub_dat_df$speed)
-#plot(sub_dat_df$ground_speed, sub_dat_df$height_above_ellipsoid)
-
-#plot(sub_dat, col=as.numeric(sub_dat$ground_speed<1)+1)
-#plot(sub_dat[sub_dat$ground_speed<1,], add=T)
-
->>>>>>> 24ba020f70027bbb7c6dc90adce792468450e1a5
 # Specifiy the settings
 
 data=sub_dat
@@ -713,17 +683,10 @@ radius=50
     N <- length(x)
     distVincentyEllipsoid(coordinates(x))/as.numeric(difftime(timestamps(x)[-1],timestamps(x)[-N],units="secs"))
   }
-<<<<<<< HEAD
-  
+
   n.all <- length(timestamps(data))
   data <- data[!duplicated(paste0(round_date(timestamps(data), "5 mins"), trackId(data))),]
   
-=======
-  
-  n.all <- length(timestamps(data))
-  data <- data[!duplicated(paste0(round_date(timestamps(data), "5 mins"), trackId(data))),]
-  
->>>>>>> 24ba020f70027bbb7c6dc90adce792468450e1a5
     data.split <- move::split(data)
     data.ground <- foreach(datai = data.split) %do% {
         if (speedvar=="speed") 
@@ -767,27 +730,14 @@ radius=50
       sunupx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunrise", POSIXct.out=TRUE))$time + upX*60
       sundownx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunset", POSIXct.out=TRUE))$time + downX*60
       data.groundi@data <- cbind(data.groundi@data,sunupx,sundownx)
-<<<<<<< HEAD
-      
-      # there are no sunup or sundown during Arctic summer, then only day positions possible "sunupdown". respectively for Arctic winter
+
+            # there are no sunup or sundown during Arctic summer, then only day positions possible "sunupdown". respectively for Arctic winter
       ix <- which(is.na(sunupx) | is.na(sundownx))
       
       ix_ArcSum <- ix[coordinates(data.groundi)[ix,2]>50 & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(4:8)]
       ix_ArcWin <- ix[coordinates(data.groundi)[ix,2]>50 & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(10:11,0:2)]
       ix_AntWin <- ix[coordinates(data.groundi)[ix,2]<(-50) & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(4:8)]
       ix_AntSum <- ix[coordinates(data.groundi)[ix,2]<(-50) & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(10:11,0:2)]
-      
-=======
-      
-      # there are no sunup or sundown during Arctic summer, then only day positions possible "sunupdown". respectively for Arctic winter
-      ix <- which(is.na(sunupx) | is.na(sundownx))
-      
-      ix_ArcSum <- ix[coordinates(data.groundi)[ix,2]>50 & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(4:8)]
-      ix_ArcWin <- ix[coordinates(data.groundi)[ix,2]>50 & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(10:11,0:2)]
-      ix_AntWin <- ix[coordinates(data.groundi)[ix,2]<(-50) & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(4:8)]
-      ix_AntSum <- ix[coordinates(data.groundi)[ix,2]<(-50) & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(10:11,0:2)]
-      
->>>>>>> 24ba020f70027bbb7c6dc90adce792468450e1a5
       
       if (window=="all")
       {
@@ -1061,8 +1011,8 @@ radius=50
         #write.csv(prop.rest.df,file = paste0("rest_overview.csv"),row.names=FALSE) #csv artefakt
         #write.csv(prop.rest.df,file = "rest_overview.csv",row.names=FALSE)
         
-<<<<<<< HEAD
-        #map <- get_map(bbox(extent(data)),source="stamen",force=TRUE)
+        
+                #map <- get_map(bbox(extent(data)),source="stamen",force=TRUE)
         
         #data.df <- data.frame(coordinates(data),as.data.frame(moveStack(data)))
         #names(data.df)[1:2] <- c("location.long0","location.lat0")
@@ -1070,17 +1020,8 @@ radius=50
         #out <- ggmap(map) +
         #  geom_path(data=data.df,aes(x=location.long0,y=location.lat0,group=trackId),colour="blue") +
         #  geom_point(data=prop.rest.df,aes(x=rest.mean.long,y=rest.mean.lat),colour="red",size=3)
-=======
-        map <- get_map(bbox(extent(data)),source="stamen",force=TRUE)
-        
-        data.df <- data.frame(coordinates(data),as.data.frame(moveStack(data)))
-        names(data.df)[1:2] <- c("location.long0","location.lat0")
-        
-        out <- ggmap(map) +
-          geom_path(data=data.df,aes(x=location.long0,y=location.lat0,group=trackId),colour="blue") +
-          geom_point(data=prop.rest.df,aes(x=rest.mean.long,y=rest.mean.lat),colour="red",size=3)
->>>>>>> 24ba020f70027bbb7c6dc90adce792468450e1a5
-        #ggsave(out, file = paste0("rest_sites_onTracks.pdf"))
+
+                #ggsave(out, file = paste0("rest_sites_onTracks.pdf"))
         
         # note that all timestamps are UTC!
       }
@@ -1131,12 +1072,6 @@ clus_res$col[clus_age>48] <- "blue"
 # 
 # m  
  
-<<<<<<< HEAD
-=======
-
-
-
->>>>>>> 24ba020f70027bbb7c6dc90adce792468450e1a5
 m <- leaflet() %>%
   # Add a satellite image layer  
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
