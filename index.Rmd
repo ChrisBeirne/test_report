@@ -30,6 +30,10 @@ library(plotly)
 library(googledrive)
 library(purrr)
 library(readxl)
+library(geosphere)
+library(foreach)
+library(maptools)
+
 options(googledrive_quiet = TRUE)
 
 # For when the trapping effort file is sorted
@@ -64,14 +68,14 @@ t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
 
 
-dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
 
 # all data
 #dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 # Convery move stack to dataframe
-dat <- as.data.frame(dat)
+dat <- as.data.frame(mov_dat)
 
 # Convert dat to costa rica time
 dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
@@ -584,282 +588,532 @@ m <- leaflet() %>%
 m 
 ```
 
+# Cluster detection
 
-```{r, eval=F, echo=F}
-library('move')
-library('geodist')
-library('lubridate') #version x.7.y!
-library('lutz')
-library('sf')
-library('sp')
-library('rgeos')
+The following map shows all of the clusters which have occurred in the previous 72 hours. This map should be checked daily to find potential feeding sites for visual confirmation. The field team should:
 
-rFunction = function(meth="buff", rad=NULL, dur=NULL, dur_unit="days", maxgap=1, gap_unit="days", data, ...) {
-  Sys.setenv(tz="UTC")
+- Prioritize recent clusters - we are more likely to find a carcass if a vulture was feeding recently
+- Prioritize accessible clusters - not all of these clusters will be accessible, you should figure out which would be the easiest to visit
+- Prioritise clusters with multipke individuals - if more than one individual has visited a cluster, this could suggest a large feeding event
+
+Key:
+- Colored circles denote clusters of > than 1 hour duration, where the vultures have low distances travelled
+- The colors denote how recently the cluster started (Red >24 hours; orange 24-48 hours; blue 48-72 hours)
+- Hover over the circle for gps coordinates, cluster radius, number of points in the cluster and duration of the event
+
+## Costa Rica
+```{r, eval=T, ech=F}
+# Code derived from
+# https://github.com/movestore/Daily-Rest-Sites
+#library('maptools')
+#library('ggmap')
+
+# Covert timezone
+mov_dat$timestamp <- with_tz(timestamps(mov_dat), tz="America/Costa_Rica")
+# Subset to costa rica
+sub_dat <- mov_dat[mov_dat$location_lat>0,]
+
+# Just pull last 3 days
+start_t2 <- t-as.difftime(3,units='days')
+sub_dat <- sub_dat[sub_dat$timestamp>start_t2,]
+
+
+sub_dat$speed <- unlist(lapply(speed(sub_dat),c, NA ))
+sub_dat_df <- as.data.frame(sub_dat)
+sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "animalName")])
+
+
+
+sub_dat_df <- sub_dat_df[order(sub_dat_df$animalName),]
+lfc <- do.call(st_sfc,
+              lapply(split(sub_dat_df, sub_dat_df$animalName),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+dat_shp <- st_sf(data.frame(animalName=levels(factor(sub_dat_df[,"animalName"])), geom=lfc))
+
+plot(st_geometry(dat_shp))
+
+#
+#plot(dat$location_long[dat$country=="costa_rica"], dat$location_lat[dat$country=="costa_rica"])
+#plot(st_geometry(dat_shp), add=T)
+
+# add back in the metadata
+dat_shp  <- left_join(dat_shp,sp_dat)
+
+# Bring in the colours from earlier
+cr_cols <- tmp_cr[, c("animalName", "colours")]
+cr_cols <- cr_cols[duplicated(cr_cols)==F,]
+dat_shp <- left_join(dat_shp, cr_cols)
+# Make shapefile of the tracks to add later
+
+#plot(sub_dat_df$ground_speed, sub_dat_df$speed)
+#plot(sub_dat_df$ground_speed, sub_dat_df$height_above_ellipsoid)
+
+#plot(sub_dat, col=as.numeric(sub_dat$ground_speed<1)+1)
+#plot(sub_dat[sub_dat$ground_speed<1,], add=T)
+
+# Specifiy the settings
+
+data=sub_dat
+window="all"
+upX=0
+downX=0
+speedvar="speed"
+maxspeed=0.2
+
+duration=1.2
+radius=50
+
+
+#rFunction <- function(data, window="all", upX=0, downX=0, speedvar="speed", maxspeed=NULL, duration=NULL, radius=NULL)
+#{
+  Sys.setenv(tz="America/Costa_Rica")
+  
   names(data) <- make.names(names(data),allow_=FALSE)
-  data@data$timestamp <- timestamps(data)
   
-  if (is.null(rad))
-  {
-    logger.info("Your cluster radius is not supplied. We use default 200 m.")
-    rad <- 200
-  }
-  if (is.null(dur))
-  {
-    logger.info(paste0("Your minimum cluster duration is not supplied. We use 14 (",dur_unit,")  as default."))
-    dur <- 14
-  }
+  # add species info
+  data.df <- as.data.frame(data)
+  names(data.df) <- make.names(names(data.df),allow_=FALSE)
+  if (any(names(data.df)=="individual.taxon.canonical.name")) data@data$species <- data.df$individual.taxon.canonical.name
+  if (any(names(data.df)=="taxon.canonical.name")) data@data$species <- data.df$taxon.canonical.name
   
-  # take out "remove" locations from data if there are any
-  remo <- FALSE
-  if (any(namesIndiv(data)=="remove"))
+  speedx <- function(x) #input move object
   {
-    ix <- which(namesIndiv(data)=="remove")
-    remove <- data[[ix]] #move object
-    data <- data[[-ix]]
-    remo <- TRUE
-    logger.info(paste("Your data set contains", length(remove), "locations with the ID 'remove'. Clusters close (< rad) to those locations will be removed from your results."))
-    logger.info(paste("Your remaining data set has", length(data), "locations of", length(namesIndiv(data)),"individuals."))
-  }
-
-  #tried to include recurse package here to pre-filter only revisited locations, but the runtime of getRecursions() was too long
-  
-  # cluster for all locations (not by ID)
-  coos <- coordinates(data)
-  
-  if (meth=="buff")
-  {
-    data_eq <- spTransform(data,CRSobj=paste0("+proj=aeqd +lat_0=",mean(coos[,2])," +lon_0=",mean(coos[,1])," +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"))
-    data_eq_buffer <- buffer(data_eq,rad,doEdge=TRUE) #takens 20 min for 250000 locs
-    data_eq_buffer_disag <- disaggregate(data_eq_buffer) #this function needs the rgeos package to work with holes in the polygons (merges overlaying buffers)
-    
-    pts_eq <- SpatialPoints(data_eq)
-    data_eq_extr <- data.frame("point.ID"=numeric(length(pts_eq)),"poly.ID"=numeric(length(pts_eq)))
-    stp <- 2000
-    if (length(pts_eq)>stp)
-    {
-      vonbis <- matrix(c(seq(1,length(pts_eq),by=stp),(seq(1,length(pts_eq),by=stp))[-1]-1,length(pts_eq)),nc=2)
-      #apply(vonbis, 1, function(x) data_eq_extr[x[1]:x[2],] <- as.data.frame(extract(data_eq_buffer_disag,pts_eq[x[1]:x[2]]))) #does not work
-      for (i in seq(along=vonbis[,1])) data_eq_extr[vonbis[i,1]:vonbis[i,2],] <- extract(data_eq_buffer_disag,pts_eq[vonbis[i,1]:vonbis[i,2]])
-    } else data_eq_extr[1:length(pts_eq),] <- extract(data_eq_buffer_disag,pts_eq)
-
-    #plot(data_eq_buffer_disag,col=rainbow(26))
-    #points(SpatialPoints(data_eq),col=data_eq_extr$poly.ID,pch=20,cex=5)
-    memb <- data_eq_extr$poly.ID
-  } else if (meth=="hclust") #cannot handle very much data, 
-  {
-    if(dim(coos)[1]>20000) logger.info("Your data set is likely too large for this calculation. Try the buffer method, subset your data or use less locations/individuals for the analysis.")
-    
-    dista <- geodist_vec(x1=coos[,1],y1=coos[,2],measure="vincenty") #unit=m, "geodesic" is probably better, but takes even longer
-    
-    #clu <- hclust(as.dist(dista),method="ward.D2") #measure in dendrogram is not distance
-    clu <- hclust(as.dist(dista),method="average")
-    #plot(as.dendrogram(clu), ylim = c(0,1000))
-    #abline(h=400,col=2)
-    memb <- cutree(clu,h=2*rad) #group membership for each location
-  }
-
-  memb <- as.character(memb) #changed to character for splitting possibility
-  cluID_all <- unique(memb)
-  data@data <- cbind(data@data,"clusterID"=memb)
-  
-  # split clusters with gaps larger than "maxgap" (multi-individual tracks in cluster), but careful: the timestamps were not ordered if there are more than 1 idv - now adapted!
-  for (i in seq(along=cluID_all))
-  {
-    #print(i)
-    xx <- cluID_all[i]
-    ixx <- which(data@data$clusterID==xx)
-    datax <- data[ixx]
-    
-    o <- order(timestamps(datax))
-    ixo <- ixx[o]
-    gapixo <- which(difftime((timestamps(datax)[o])[-1],(timestamps(datax)[o])[-length(datax)],unit=gap_unit)>maxgap)
-    #gapix <- which(difftime(timestamps(datax)[-1],timestamps(datax)[-length(datax)],unit=gap_unit)>maxgap) #did not combine timestamps of multiple IDs
-    if (length(gapixo)>0)
-    {
-      endso <- c(gapixo,length(datax))
-      for (j in seq(along=gapixo)) 
-      {
-        ixo_endsoj <- ixo[(endso[j]+1):endso[j+1]]
-        data@data$clusterID[ixo_endsoj] <- paste0(xx,".",j) #keeps orig. name for first component
-      }
-    }
+    N <- length(x)
+    distVincentyEllipsoid(coordinates(x))/as.numeric(difftime(timestamps(x)[-1],timestamps(x)[-N],units="secs"))
   }
   
-  cluID_all <- unique(data@data$clusterID) #feed new clusters into list of all
-
-  #remove clusters with duration below "dur"
-  cluID <- apply(matrix(cluID_all), 1, function(x) ifelse(as.numeric(difftime(max(timestamps(data)[data@data$clusterID==x]),min(timestamps(data)[data@data$clusterID==x]),unit=dur_unit))>=dur, x, NA))
+  n.all <- length(timestamps(data))
+  data <- data[!duplicated(paste0(round_date(timestamps(data), "5 mins"), trackId(data))),]
   
-  cluID <- cluID[!is.na(cluID)]
-  
-  if (length(cluID)>0) #include here to calc. number of locations/bursts not in cluster - see below
-  {
-    #midlon <- apply(matrix(cluID), 1, function(x) mean(coordinates(data[data@data$clusterID==x])[,1])) 
-    #midlat <- apply(matrix(cluID), 1, function(x) mean(coordinates(data[data@data$clusterID==x])[,2])) 
-    
-    centrloc <- t(apply(matrix(cluID), 1, function(x) coordinates(data[data@data$clusterID==x])[min(which(rowMeans(geodist_vec(x1=coordinates(data[data@data$clusterID==x])[,1],y1=coordinates(data[data@data$clusterID==x])[,2],measure="vincenty"))==min(rowMeans(geodist_vec(x1=coordinates(data[data@data$clusterID==x])[,1],y1=coordinates(data[data@data$clusterID==x])[,2],measure="vincenty"))))),]))
-
-    centrlon <- centrloc[,1]
-    centrlat <- centrloc[,2]
-    
-    #take out clusters in rad radius around "remove"
-    if (remo==TRUE) 
-    {
-      remo_dist <- geodist_vec(x1=coordinates(remove)[,1],y1=coordinates(remove)[,2],x2=centrlon,y2=centrlat,measure="vincenty")
-      if (any(remo_dist<rad))
-      {
-        out <- which(remo_dist<rad,arr.ind=TRUE)[,2]
-        cluID <- cluID[-out]
-        centrlon <- centrlon[-out]
-        centrlat <- centrlat[-out]
-        logger.info(paste0(length(out)," clusters were removed from your results, because they were close (< ",rad," m) to the provided locations with ID 'remove'."))
-      }
-    }
-    
-    result <- data[data@data$clusterID %in% cluID] #these are all locations that are in a (non-remove) cluster with difftime>dur
-    result@data <- result@data[,!sapply(result@data, function(x) all(is.na(x)))] #remove columns with no info
-    result@data$clu.centr.long <- apply(matrix(result@data$clusterID), 1, function(x) centrlon[which(cluID==x)])
-    result@data$clu.centr.lat <- apply(matrix(result@data$clusterID), 1, function(x) centrlat[which(cluID==x)])
-    
-    tz_info_result <- tz_lookup_coords(coordinates(result)[,2], coordinates(result)[,1], method = "accurate")
-    result@data$timestamp.local <- apply(data.frame(timestamps(result),tz_info_result), 1, function(x) as.character(lubridate::with_tz(x[1], x[2])))
-    result@data$local.timezone <- tz_info_result 
-    result@data$date.local <- format(as.POSIXct(result@data$timestamp.local),format="%Y-%m-%d")
-    result@data$time.local <- format(as.POSIXct(result@data$timestamp.local),format="%H:%M:%S")
-    
-    coo <- data.frame(coordinates(result))
-    names(coo) <- c("location.long","location.lat")
-    result.df <- data.frame(as.data.frame(result),coo) #NA columns are back in
-    result.df <- result.df[,!sapply(result.df, function(x) all(is.na(x)))] #take NA out
-    names(result.df) <- make.names(names(result.df),allow_=FALSE)
-    clu.ix <- which(names(result.df) %in% c("clusterID","clu.centr.long","clu.centr.lat"))
-    result.df <- data.frame(result.df[,clu.ix],result.df[,-clu.ix])
-    heightix <- grep("height",names(result.df))
-    if(length(heightix)>0) heightname <- names(result.df)[min(heightix)] else heightname <- NA
-    
-    #cluster table
-    n.locs <- apply(matrix(cluID), 1, function(x) length(which(result@data$clusterID==x)))
-    n.ids <- apply(matrix(cluID), 1, function(x) length(unique(result.df$trackId[result.df$clusterID==x])))
-    id.names <- apply(matrix(cluID), 1, function(x) paste(unique(result.df$trackId[result.df$clusterID==x]),collapse=", "))
-    id.tags <- apply(matrix(cluID), 1, function(x) paste(unique(result.df$tag.local.identifier[result.df$clusterID==x]),collapse=", "))
-    
-    # add cumlag.locs (sum of timelags of each location in cluster) - addition from Sep 2022
-    result@data$timelag <- unlist(lapply(timeLag(result, units=dur_unit), function(x) c(as.vector(x), NA)))
-    cumlag.locs <-  apply(matrix(cluID), 1, function(x) sum(result@data$timelag[which(result@data$clusterID==x)],na.rm=TRUE))
-    
-    alldata.df <- as.data.frame(data)
-    
-    id.locs <- id.durs <- id.locsout <- id.locsBETout <- id.nrevs <- id.durBETrevs <- id.maxdistBETrevs <- character(length(cluID))
-    n.revs <- n.locsout <- numeric(length(cluID))
-    for (i in seq(along=cluID))
-    {
-      idsi <- as.character(unique(result.df$trackId[result.df$clusterID==cluID[i]])) #individuals that use this cluster
-      #if(length(idsi)>1) print(i)
-      id.locs[i] <- paste(apply(matrix(idsi), 1, function(x) length(result.df$trackId[result.df$trackId==x & result.df$clusterID==cluID[i]])),collapse=", ")
-      id.durs[i] <- paste(apply(matrix(idsi), 1, function(x) round(as.numeric(difftime(max(result.df$timestamp[result.df$trackId==x & result.df$clusterID==cluID[i]],na.rm=TRUE),min(result.df$timestamp[result.df$trackId==x & result.df$clusterID==cluID[i]],na.rm=TRUE),units=dur_unit)),1)),collapse=", ")
-      
-      id.locsout[i] <- paste(apply(matrix(idsi), 1, function(x) length(which(alldata.df$timestamp[alldata.df$trackId==x] >= min(timestamps(data[data@data$clusterID==cluID[i]])) & alldata.df$timestamp[alldata.df$trackId==x] <= max(timestamps(data[data@data$clusterID==cluID[i]])))) - length(result.df$trackId[result.df$trackId==x & result.df$clusterID==cluID[i]])),collapse=", ") #locations outside of cluster in complete cluster interval
-      id.locsBETout[i] <- paste(apply(matrix(idsi), 1, function(x) length(which(alldata.df$timestamp[alldata.df$trackId==x] >= min(alldata.df$timestamp[alldata.df$clusterID==cluID[i] & alldata.df$trackId==x]) & alldata.df$timestamp[alldata.df$trackId==x] <= max(alldata.df$timestamp[alldata.df$clusterID==cluID[i] & alldata.df$trackId==x]))) - length(result.df$trackId[result.df$trackId==x & result.df$clusterID==cluID[i]])),collapse=", ") #locations outside of cluster in indiv specific cluster interval
-      n.locsout[i] <- sum(as.numeric(trimws(strsplit(as.character(id.locsout[i]),",")[[1]])),na.rm=TRUE) # sum of all locations outside of cluster (all idvs. that use cluster, complete cluster duration)
-      
-      id.nrevisits <- id.durBETrevisits <- id.maxdistBETrevisits <- character(0)
-      for (j in seq(along=idsi))
-      {
-        clutrackj <- alldata.df[alldata.df$trackId==idsi[j] & alldata.df$timestamp >= min(alldata.df$timestamp[alldata.df$clusterID==cluID[i] & alldata.df$trackId==idsi[j]]) & alldata.df$timestamp <= max(alldata.df$timestamp[alldata.df$clusterID==cluID[i] & alldata.df$trackId==idsi[j]]),]
-        #print(clutrackj[,c("trackId","timestamp","clusterID")])
-        clutr_p1 <- clutrackj[-1,]
-        clutr_m1 <- clutrackj[-dim(clutrackj)[1],]
-
-        lastix <- which(clutrackj$clusterID[-dim(clutrackj)[1]]==cluID[i] & clutr_p1$clusterID!=cluID[i]) #when leave cluster
-        firstix <- which(clutrackj$clusterID[-1]==cluID[i] & clutr_m1$clusterID!=cluID[i]) +1 #when enter cluster anew
-          
-        #need to append with comma
-        if (length(firstix)>0)
+    data.split <- move::split(data)
+    data.ground <- foreach(datai = data.split) %do% {
+        if (speedvar=="speed") 
         {
-          #if (length(firstix)>1) print(paste(i,j))
-          id.nrevisits <- c(id.nrevisits,length(firstix))
-          id.durBETrevisits <- c(id.durBETrevisits,paste(difftime(clutrackj$timestamp[firstix],clutrackj$timestamp[lastix],units="hours"),collapse=","))
-          id.maxdistBETrevisits <- c(id.maxdistBETrevisits,paste(apply(matrix(seq(along=firstix)), 1, function(x) round(max(geodist_vec(x1=centrlon[i],y1=centrlat[i],x2=clutrackj$location.long[(lastix[x]+1):(firstix[x]-1)],y2=clutrackj$location.lat[(lastix[x]+1):(firstix[x]-1)])),digits=2)),collapse=","))
-        } else
+          if (length(datai)>1) #cannot calculated between-loc speed if only one location, therefore keep
+          {
+            ix <- which(speedx(datai)<maxspeed)
+            res <- datai[sort(unique(c(ix,ix+1))),]#this uses the speed between positions
+          } else
+          {
+ #           logger.info("One of your tracks contains only one location, so between-location speed cannot be calculated. The location is kept in the data set, but might corrupt the results.")
+            res <- datai
+          }
+        } else if (speedvar %in% names(datai)) 
         {
-          id.nrevisits <- c(id.nrevisits,NA)
-          id.durBETrevisits <- c(id.durBETrevisits,NA)
-          id.maxdistBETrevisits <- c(id.maxdistBETrevisits,NA)                
+          res <- datai[datai@data[,speedvar]<maxspeed | is.na(datai@data[,speedvar]),] # this allows also NA speed to be selected
+#          logger.info("Your speed variable contains NA, these are kept in the data set of rest positions.")
+        } else 
+        {
+#          logger.info("You have not selected a viable speed variable. Therefore the fallback between location speed is calculated.")
+          if (length(datai)>1)
+          {
+            ix <- which(speedx(datai)<maxspeed)
+            res <- datai[sort(unique(c(ix,ix+1))),]#this uses the speed between positions
+          } else
+          {
+#            logger.info("One of your tracks contains only one location, so between-location speed cannot be calculated. The location is kept in the data set, but might corrupt the results.")
+            res <- datai
+          }
         }
-        n.revs[i] <- sum(as.numeric(id.nrevisits),na.rm=TRUE) # sum of revisits (all idvs.)
-        id.nrevs[i] <- paste(id.nrevisits,collapse=", ")  # number of individual revisits (zero if only once at cluster)
-        id.durBETrevs[i] <- paste(id.durBETrevisits,collapse=", ") # duration outside of cluster before revisit (timediff between last loc in cluster until first loc back in cluster) - NA if no revisits
-        id.maxdistBETrevs[i] <- paste(id.maxdistBETrevisits,collapse=", ") #max dist to cluster centre during gap before revisit
+        res
+    }
+    names(data.ground) <- names(data.split)
+    data.ground <- moveStack(data.ground[unlist(lapply(data.ground, length) > 0)])
+
+  
+    # select night or day positions (use data.ground, call it "night")
+    data.ground.split <- move::split(data.ground)
+    data.night <- foreach(data.groundi = data.ground.split) %do% {
+      #print(namesIndiv(data.groundi))
+      sunupx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunrise", POSIXct.out=TRUE))$time + upX*60
+      sundownx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunset", POSIXct.out=TRUE))$time + downX*60
+      data.groundi@data <- cbind(data.groundi@data,sunupx,sundownx)
+      
+      # there are no sunup or sundown during Arctic summer, then only day positions possible "sunupdown". respectively for Arctic winter
+      ix <- which(is.na(sunupx) | is.na(sundownx))
+      
+      ix_ArcSum <- ix[coordinates(data.groundi)[ix,2]>50 & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(4:8)]
+      ix_ArcWin <- ix[coordinates(data.groundi)[ix,2]>50 & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(10:11,0:2)]
+      ix_AntWin <- ix[coordinates(data.groundi)[ix,2]<(-50) & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(4:8)]
+      ix_AntSum <- ix[coordinates(data.groundi)[ix,2]<(-50) & as.POSIXlt(timestamps(data.groundi[ix,]))$mon %in% c(10:11,0:2)]
+      
+      
+      if (window=="all")
+      {
+        data.nighti <- data.groundi
+        year <- as.POSIXlt(timestamps(data.nighti))$year+1900
+        yday <- as.POSIXlt(timestamps(data.nighti))$yday
+        data.nighti@data <- cbind(data.nighti@data,year,yday)
+      } else
+      {
+        if (window=="sundownup") #night roosts
+        {
+          if (length(ix_ArcSum)>0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions above the Arctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_ArcSum)," northern summer positions without 'night' (May-Sep) are taken out for the calculations."))
+            data.groundi <- data.groundi[-ix_ArcSum,]
+          }
+          if (length(ix_AntSum)>0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions below the Antarctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_AntSum)," southern summer positions without 'night' (Nov-Mar) are taken out for the calculations."))
+            data.groundi <- data.groundi[-ix_AntSum,]
+          }
+          
+          if (length(ix_ArcWin)>0 & length(ix_AntWin)>0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions above the Arctic circle and below the Antarctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_ArcWin)," northern winter positions without 'day' (Nov-Mar) and", length(ix_AntWin), " southern winter positions without 'day' (May-Sep) are kept in the data fully."))
+            data.groundi.ND <- data.groundi[-c(ix_ArcWin,ix_AntWin),]
+            ix.ND <- seq(along=data.groundi)[-c(ix_ArcWin,ix_AntWin)]
+            selND <- which(timestamps(data.groundi.ND)<=data.groundi.ND$sunupx | timestamps(data.groundi.ND)>=data.groundi.ND$sundownx)
+            data.nighti <- data.groundi[sort(c(ix.ND[selND],ix_ArcWin,ix_AntWin)),]
+          } else if (length(ix_ArcWin)>0 & length(ix_AntWin)==0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions above the Arctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_ArcWin)," northern winter positions without 'day' (Nov-Mar) are kept in the data fully."))
+            data.groundi.ND <- data.groundi[-c(ix_ArcWin),]
+            ix.ND <- seq(along=data.groundi)[-c(ix_ArcWin)]
+            selND <- which(timestamps(data.groundi.ND)<=data.groundi.ND$sunupx | timestamps(data.groundi.ND)>=data.groundi.ND$sundownx)
+            data.nighti <- data.groundi[sort(c(ix.ND[selND],ix_ArcWin)),]
+          } else if (length(ix_ArcWin)==0 & length(ix_AntWin)>0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions below the Antarctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_AntWin)," southern winter positions without 'day' (May-Sep) are kept in the data fully."))
+            data.groundi.ND <- data.groundi[-c(ix_AntWin),]
+            ix.ND <- seq(along=data.groundi)[-c(ix_AntWin)]
+            selND <- which(timestamps(data.groundi.ND)<=data.groundi.ND$sunupx | timestamps(data.groundi.ND)>=data.groundi.ND$sundownx)
+            data.nighti <- data.groundi[sort(c(ix.ND[selND],ix_AntWin)),]
+          } else data.nighti <- data.groundi[timestamps(data.groundi)<=data.groundi$sunupx | timestamps(data.groundi)>=data.groundi$sundownx,]
+          
+          year <- as.POSIXlt(timestamps(data.nighti))$year+1900
+          yday <- as.POSIXlt(timestamps(data.nighti))$yday
+          ynight <- yday
+          
+          ixx <- which(is.na(data.nighti$sundownx))
+          if (length(ixx)>0)
+          {
+            ynight[timestamps(data.nighti[-ixx])>data.nighti$sundownx[-ixx]] <- ynight[timestamps(data.nighti[-ixx])>data.nighti$sundownx[-ixx]]+1
+            
+            # for Arctic/Antarctic nights the night goes from midday to midday, which depends on the location..
+            midday_ixx <- solarnoon(coordinates(data.nighti[ixx]),timestamps(data.nighti[ixx]),POSIXct.out=TRUE)$time
+            ynight[timestamps(data.nighti[ixx])>midday_ixx] <- ynight[timestamps(data.nighti[ixx])>midday_ixx]+1
+          } else ynight[timestamps(data.nighti)>data.nighti$sundownx] <- ynight[timestamps(data.nighti)>data.nighti$sundownx]+1
+          
+          # adapt for New Year's Eve
+          year[as.POSIXlt(timestamps(data.nighti))$mday==31 & as.POSIXlt(timestamps(data.nighti))$mon==11 & timestamps(data.nighti)>data.nighti$sundownx] <- year[as.POSIXlt(timestamps(data.nighti))$mday==31 & as.POSIXlt(timestamps(data.nighti))$mon==11 & timestamps(data.nighti)>data.nighti$sundownx]+1
+          ynight[as.POSIXlt(timestamps(data.nighti))$mday==31 & as.POSIXlt(timestamps(data.nighti))$mon==11 & timestamps(data.nighti)>data.nighti$sundownx] <- 0
+          
+          data.nighti@data <- cbind(data.nighti@data,year,yday,ynight)
+        }
+        
+        if (window=="sunupdown") # day rests
+        {
+          if (length(ix_ArcWin)>0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions above the Arctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_ArcWin)," northern winter positions without 'day' (Nov-Mar) are taken out for the calculations."))
+            data.groundi <- data.groundi[-ix_ArcWin,]
+          }
+          if (length(ix_AntWin)>0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions below the Antarctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_AntWin)," southern winter positions without 'day' (May-Sep) are taken out for the calculations."))
+            data.groundi <- data.groundi[-ix_AntWin,]
+          }
+          
+          if (length(ix_ArcSum)>0 & length(ix_AntSum)>0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions above the Arctic circle and below the Antarctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_ArcSum)," northern summer positions without 'night' (May-Sep) and", length(ix_AntSum), " southern summer positions without 'night' (Nov-Mar) are kept in the data fully."))
+            data.groundi.ND <- data.groundi[-c(ix_ArcSum,ix_AntSum),]
+            ix.ND <- seq(along=data.groundi)[-c(ix_ArcSum,ix_AntSum)]
+            selND <- which(timestamps(data.groundi.ND)>=data.groundi.ND$sunupx & timestamps(data.groundi.ND)<=data.groundi.ND$sundownx)
+            data.nighti <- data.groundi[sort(c(ix.ND[selND],ix_ArcSum,ix_AntSum)),]
+          } else if (length(ix_ArcSum)>0 & length(ix_AntSum)==0)
+          {
+ #           logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions above the Arctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_ArcSum)," northern summer positions without 'night' (May-Sep) are kept in the data fully."))
+            data.groundi.ND <- data.groundi[-c(ix_ArcSum),]
+            ix.ND <- seq(along=data.groundi)[-c(ix_ArcSum)]
+            selND <- which(timestamps(data.groundi.ND)>=data.groundi.ND$sunupx & timestamps(data.groundi.ND)<=data.groundi.ND$sundownx)
+            data.nighti <- data.groundi[sort(c(ix.ND[selND],ix_ArcSum)),]
+          } else if (length(ix_ArcSum)==0 & length(ix_AntSum)>0)
+          {
+#            logger.info(paste0("The data set of individual ",namesIndiv(data.groundi)," includes positions below the Antarctic circle, so there are no sunup or sundown events during some time of the year. The relevant ",length(ix_AntSum)," southern summer positions without 'night' (Nov-Mar) are kept in the data fully."))
+            data.groundi.ND <- data.groundi[-c(ix_AntSum),]
+            ix.ND <- seq(along=data.groundi)[-c(ix_AntSum)]
+            selND <- which(timestamps(data.groundi.ND)>=data.groundi.ND$sunupx & timestamps(data.groundi.ND)<=data.groundi.ND$sundownx)
+            data.nighti <- data.groundi[sort(c(ix.ND[selND],ix_AntSum)),]
+          } else data.nighti <- data.groundi[timestamps(data.groundi)>=data.groundi$sunupx & timestamps(data.groundi)<=data.groundi$sundownx,]
+          
+          year <- as.POSIXlt(timestamps(data.nighti))$year+1900
+          yday <- as.POSIXlt(timestamps(data.nighti))$yday
+          data.nighti@data <- cbind(data.nighti@data,year,yday)
+        }
+      }
+      return(data.nighti)
+    }
+    if (is(data.night,'Move')) data.night <- moveStack(data.night,forceTz="UTC") #force to movestack
+    names (data.night) <- names(data.ground.split)
+    data.night.nozero <- data.night[unlist(lapply(data.night, length) > 0)]
+    
+    if (length(data.night.nozero)==0) #number of list elements
+    {
+#      logger.info("Your data contain no night/day positions. No csv overview saved. Return NULL.")
+      result <- NULL
+    } else 
+    {
+      data.night <- moveStack(data.night.nozero)
+      data.night.df <- as.data.frame(data.night)
+      nacolx <- which(apply(data.night.df,2,function (x) all(is.na(x))))
+      if (length(nacolx)>0) data.night.df.nna <- data.night.df[,-nacolx] else data.night.df.nna <- data.night.df #remove columns with all NA
+      
+      #write.csv(data.night.df.nna,file = paste0("data_rest_selectedTime.csv"),row.names=FALSE) #csv artefakt of all ground and night (or day...) positions
+      #write.csv(data.night.df.nna,file = "data_rest_selectedTime.csv",row.names=FALSE) #csv artefakt of all ground and night (or day...) positions
+      
+      # save all rest positions if is rest by given definition (radius, duration), goes backwards for last night/day rest
+      data.night.split <- move::split(data.night)
+      
+      if (window=="all")
+      {
+        prop.rest.df <- data.frame("local.identifier"=character(),"species"=character(),"year"=numeric(),"yday"=numeric(),"timestamp.first"=character(),"timestamp.last"=character(),"rest.mean.long"=numeric(),"rest.mean.lat"=numeric(),"rest.nposi"=numeric(),"rest.duration"=numeric(),"rest.radius"=numeric())
+      } else
+      {
+        if (window=="sundownup") prop.rest.df <- data.frame("local.identifier"=character(),"species"=character(),"year"=numeric(),"ynight"=numeric(),"timestamp.first"=character(),"timestamp.last"=character(),"rest.mean.long"=numeric(),"rest.mean.lat"=numeric(),"rest.nposi"=numeric(),"rest.duration"=numeric(),"rest.radius"=numeric())
+        if (window=="sunupdown") prop.rest.df <- data.frame("local.identifier"=character(),"species"=character(),"year"=numeric(),"yday"=numeric(),"timestamp.first"=character(),"timestamp.last"=character(),"rest.mean.long"=numeric(),"rest.mean.lat"=numeric(),"rest.nposi"=numeric(),"rest.duration"=numeric(),"rest.radius"=numeric())
+      }
+      
+      data.rest <- foreach(data.nighti = data.night.split) %do% {
+#        logger.info(paste("Extracting rest sites of",namesIndiv(data.nighti)))
+        data.resti.df <- data.frame(as.data.frame(moveStack(data.nighti)),coordinates(data.nighti))[0,] #empty df to fill, moveStack to keep trackId
+        Nresti <- dim(data.resti.df)[2]
+        names(data.resti.df)[(Nresti-1):Nresti] <- c("location.long","location.lat")
+        
+        year <- unique(data.nighti@data$year)
+        for (k in seq(along=year))
+        {
+          
+          data.nightik <- data.nighti[data.nighti@data$year==year[k],]
+          
+          if (window=="all")
+          {
+            night <- unique(data.nightik@data$yday)
+          } else
+          {
+            if (window=="sundownup") night <- unique(data.nightik@data$ynight)
+            if (window=="sunupdown") night <- unique(data.nightik@data$yday)
+          }
+          
+          for (j in seq(along=night))
+          {
+            
+            if (window=="all")
+            {
+              data.nightikj <- data.nightik[data.nightik@data$yday==night[j],]
+            } else
+            {
+              if (window=="sundownup") data.nightikj <- data.nightik[data.nightik@data$ynight==night[j],]
+              if (window=="sunupdown") data.nightikj <- data.nightik[data.nightik@data$yday==night[j],]
+            }
+            
+            last <- Nikj <- length(data.nightikj)
+            while (last>1) # as long as first night/day position is not the last
+            {
+              data.nightikj <- data.nightikj[1:last,]
+              backdt <- as.numeric(difftime(timestamps(data.nightikj)[last],timestamps(data.nightikj)[-c(last:Nikj)],units="hours"))
+              if (length(backdt)>=1) #changed this to allow for further away position (if in radius assume not moved), allows for worse resolution data
+              {
+                # note that here not yet checked that duration in site complete, later
+                if (any(backdt<=duration)) 
+                {
+                  data.sel <- data.nightikj[c(which(backdt<=duration),last),] 
+                  data.rem <- data.nightikj[-c(which(backdt<=duration),last),]
+                } else
+                {
+                  data.sel <- data.nightikj[(last-1):last,]
+                  data.rem <- data.nightikj[-c((last-1):last),]
+                }
+                m <- colMeans(coordinates(data.sel))
+                dp0 <- distVincentyEllipsoid(m,coordinates(data.sel))
+                p0 <- coordinates(data.sel)[min(which(dp0==max(dp0))),]
+                dp1 <- distVincentyEllipsoid(p0,coordinates(data.sel))
+                p1 <- coordinates(data.sel)[min(which(dp1==max(dp1))),]
+                maxdist <- distVincentyEllipsoid(p0,p1)
+                
+                if (maxdist<radius)
+                {
+                  ## check if already longer at this rest site
+                  mid <- midPoint(p0,p1)
+                  data.bef <- data.rem
+                  if (length(data.bef)>=1)
+                  {
+                    dist.bef <- distVincentyEllipsoid(mid,coordinates(data.bef))
+                    if (any(dist.bef>radius))
+                    {
+                      data.selx <- data.nightikj[c(which(backdt>duration)[-(1:max(which(dist.bef>radius)))],which(backdt<=duration),last),]
+                      data.remx <- data.nightikj[-c(which(backdt>duration)[-(1:max(which(dist.bef>radius)))],which(backdt<=duration),last),]
+                    } else 
+                    {
+                      data.selx <- data.nightikj[c(which(backdt>duration),which(backdt<=duration),last),]
+                      data.remx <- data.nightikj[-c(which(backdt>duration),which(backdt<=duration),last),]
+                    }
+                  } else 
+                  {
+                    data.selx <- data.sel
+                    data.remx <- data.rem
+                  }
+                  
+                  data.selx.df <- data.frame(as.data.frame(moveStack(data.selx)),coordinates(data.selx))
+                  Nselx <- dim(data.selx.df)[2]
+                  names(data.selx.df)[(Nselx-1):Nselx] <- c("location.long","location.lat")
+                  
+                  time0 <- min(timestamps(data.selx))
+                  timeE <- max(timestamps(data.selx))
+                  durx <- as.numeric(difftime(timeE,time0,unit="hour"))
+                  radx <- max(distVincentyEllipsoid(mid,coordinates(data.selx)))
+                  
+                  if (durx>=duration & radx<=radius) #added this condition to only save rest sites of given duration (if this condition is left out also rest site with shorter duration are given back)
+                  {
+                    data.resti.df <- rbind(data.resti.df,data.selx.df)
+                    
+                    if (window=="all")
+                    {
+                      prop.rest.df <- rbind(prop.rest.df,data.frame("local.identifier"=namesIndiv(data.selx),"species"=data.selx.df$species,"year"=data.selx.df$year[1],"yday"=data.selx.df$yday[1],"timestamp.first"=as.character(time0),"timestamp.last"=as.character(timeE),"rest.mean.long"=mid[1,1],"rest.mean.lat"=mid[1,2],"rest.nposi"=length(data.selx),"rest.duration"=durx,"rest.radius"=radx))
+                    } else
+                    {
+                      if (window=="sundownup") prop.rest.df <- rbind(prop.rest.df,data.frame("local.identifier"=namesIndiv(data.selx),"species"=data.selx.df$species[1],"year"=data.selx.df$year[1],"ynight"=data.selx.df$ynight[1],"timestamp.first"=as.character(time0),"timestamp.last"=as.character(timeE),"rest.mean.long"=mid[1,1],"rest.mean.lat"=mid[1,2],"rest.nposi"=length(data.selx),"rest.duration"=durx,"rest.radius"=radx))
+                      if (window=="sunupdown") prop.rest.df <- rbind(prop.rest.df,data.frame("local.identifier"=namesIndiv(data.selx),"species"=data.selx.df$species[1],"year"=data.selx.df$year[1],"yday"=data.selx.df$yday[1],"timestamp.first"=as.character(time0),"timestamp.last"=as.character(timeE),"rest.mean.long"=mid[1,1],"rest.mean.lat"=mid[1,2],"rest.nposi"=length(data.selx),"rest.duration"=durx,"rest.radius"=radx))
+                    }
+                  }
+                  
+                  #A) if only need one, i.e. the last, rest site per day/night
+                  #break 
+                  
+                  #B) if need all rest sites (irregardless if previous rest site was saved, check for another one in the remaining data)
+                  data.nightikj <- data.remx
+                  last <- Nikj <- length(data.nightikj) #this can be zero, will be stop indication in while() condition
+                  
+                } else last <- last-1 #shift one time step
+              } else last <- last-1 # shift one time step also if not enough data in previous Xh time frame
+            } #while
+          } #for j
+        } #for k
+        if (dim(data.resti.df)[1]>0) 
+        {
+          o <- order(data.resti.df$timestamp)
+          data.resti <- move(x=data.resti.df$location.long[o],y=data.resti.df$location.lat[o],time=as.POSIXct(data.resti.df$timestamp[o]),data=data.resti.df[o,],sensor=data.resti.df$sensor[o],animal=data.resti.df$trackId[o])
+        } else data.resti <- NULL
+      }
+      names(data.rest) <- names(data.night.split)
+      data.rest.nozero <- data.rest[unlist(lapply(data.rest, length) > 0)] #remove IDs with no data
+      
+      if (length(data.rest.nozero)==0) 
+      {
+#        logger.info("Your output file contains no positions. No csv overview and plot saved. Return NULL.")
+        result <- NULL
+      } else 
+      {
+        result <- moveStack(data.rest.nozero)
+        #write.csv(prop.rest.df,file = paste0("rest_overview.csv"),row.names=FALSE) #csv artefakt
+        #write.csv(prop.rest.df,file = "rest_overview.csv",row.names=FALSE)
+        
+        map <- get_map(bbox(extent(data)),source="stamen",force=TRUE)
+        
+        data.df <- data.frame(coordinates(data),as.data.frame(moveStack(data)))
+        names(data.df)[1:2] <- c("location.long0","location.lat0")
+        
+        out <- ggmap(map) +
+          geom_path(data=data.df,aes(x=location.long0,y=location.lat0,group=trackId),colour="blue") +
+          geom_point(data=prop.rest.df,aes(x=rest.mean.long,y=rest.mean.lat),colour="red",size=3)
+        #ggsave(out, file = paste0("rest_sites_onTracks.pdf"))
+        
+        # note that all timestamps are UTC!
       }
     }
-    timestamp.start <- apply(matrix(cluID), 1, function(x) paste(as.character(min(timestamps(result[result@data$clusterID==x]))),"UTC"))
-    timestamp.end <- apply(matrix(cluID), 1, function(x) paste(as.character(max(timestamps(result[result@data$clusterID==x]))),"UTC"))
-    duration <- as.numeric(difftime(as.POSIXct(timestamp.end), as.POSIXct(timestamp.start),units=dur_unit))
-    
-    cluster.diameter.m <- apply(matrix(cluID), 1, function(x) max(geodist_vec(x1=coordinates(data[data@data$clusterID==x])[,1],y1=coordinates(data[data@data$clusterID==x])[,2],measure="vincenty"),na.rm=TRUE))
-    realised.centr.radius.m <- apply(matrix(cluID), 1, function(x) max(geodist_vec(x1=coordinates(data[data@data$clusterID==x])[,1],y1=coordinates(data[data@data$clusterID==x])[,2],x2=centrlon[which(cluID==x)],y2=centrlat[which(cluID==x)],measure="vincenty"),na.rm=TRUE))
-    
-    tz_info_clu<- tz_lookup_coords(centrlat, centrlon, method = "accurate")
-    timestamp.start.local <- apply(data.frame(timestamp.start,tz_info_clu), 1, function(x) as.character(lubridate::with_tz(x[1], x[2])))
-    timestamp.end.local <- apply(data.frame(timestamp.end,tz_info_clu), 1, function(x) as.character(lubridate::with_tz(x[1], x[2])))
-    
-    clu_tab <- data.frame("cluster.ID"=cluID,n.locs,cumlag.locs,n.ids,id.tags,id.locs,id.durs,"centr.long"=centrlon,"centr.lat"=centrlat,timestamp.start.local,timestamp.end.local,"local.timezone"=tz_info_clu,duration,timestamp.start,timestamp.end,id.names,cluster.diameter.m,realised.centr.radius.m,n.locsout,id.locsout,id.locsBETout,n.revs,id.nrevs,id.durBETrevs,id.maxdistBETrevs)
-    
-    names(clu_tab)[names(clu_tab)=="cumlag.locs"] <- paste0("cumlag.locs (",dur_unit,")")
-    names(clu_tab)[names(clu_tab)=="duration"] <- paste0("duration (",dur_unit,")")
-    names(clu_tab)[names(clu_tab)=="id.durs"] <- paste0("id.durs (",dur_unit,")")
-    
-    o <- order(clu_tab$n.ids,clu_tab$n.locs,decreasing=TRUE)
-    clu_tab <- clu_tab[o,]
-    
-    write.csv(clu_tab,file=paste0(Sys.getenv(x = "APP_ARTIFACTS_DIR", "/tmp/"),"Cluster_Table.csv"),row.names=FALSE)
-    #write.csv(clu_tab,file="Cluster_Table.csv",row.names=FALSE)
-    
-    # finish points with clusters table, add n.ids and n.locs for Email Alert App (and n.revs and n.locsout for Earth Ranger)
-    result@data$n.ids <- apply(matrix(result@data$clusterID), 1, function(x) n.ids[which(cluID==x)])
-    result@data$n.locs <- apply(matrix(result@data$clusterID), 1, function(x) n.locs[which(cluID==x)])
-    result@data$cumlag.locs <- apply(matrix(result@data$clusterID), 1, function(x) cumlag.locs[which(cluID==x)])
-    result@data$n.revs <- apply(matrix(result@data$clusterID), 1, function(x) n.revs[which(cluID==x)])
-    result@data$n.locsout <- apply(matrix(result@data$clusterID), 1, function(x) n.locsout[which(cluID==x)])
-    result.df <- cbind(result.df,"n.ids"=result@data$n.ids,"n.locs"=result@data$n.locs,"cumlag.locs"=result@data$cumlag.locs,"n.locsout"=result@data$n.locsout,"n.revs"=result@data$n.revs)
-    
-    if (!is.na(heightname))
-    {
-      ixcsv <- which(c("clusterID","tag.local.identifier","n.ids","n.locs","cumlag.locs","n.locsout","n.revs","timestamp.local","location.long","location.lat","date.local","time.local","local.timezone","trackId","ground.speed","heading",heightname,"clu.centr.long","clu.centr.lat") %in% names(result.df)) #fix if e.g. some data sets done have ground.speed or heading
-    result.df.csv <- result.df[,c("clusterID","tag.local.identifier","n.ids","n.locs","cumlag.locs","n.locsout","n.revs","timestamp.local","location.long","location.lat","date.local","time.local","local.timezone","trackId","ground.speed","heading",heightname,"clu.centr.long","clu.centr.lat")[ixcsv]]
-    } else
-    {
-      ixcsv <- which(c("clusterID","tag.local.identifier","n.ids","n.locs","cumlag.locs","n.locsout","n.revs","timestamp.local","location.long","location.lat","date.local","time.local","local.timezone","trackId","ground.speed","heading","clu.centr.long","clu.centr.lat") %in% names(result.df)) #fix if e.g. some data sets done have ground.speed or heading
-      result.df.csv <- result.df[,c("clusterID","tag.local.identifier","n.ids","n.locs","cumlag.locs","n.locsout","n.revs","timestamp.local","location.long","location.lat","date.local","time.local","local.timezone","trackId","ground.speed","heading","clu.centr.long","clu.centr.lat")[ixcsv]]
-    }
-    
-    names(result.df.csv)[names(result.df.csv)=="trackId"] <- c("animalID")
-    names(result.df.csv)[names(result.df.csv)=="tag.local.identifier"] <- c("tagID")
-    result@data$animalID <- result.df.csv$animalID
-    result@data$tagID <- result.df.csv$tagID
-     
-    #for utm locations we would need a separate App
-    
-    write.csv(result.df.csv,file=paste0(Sys.getenv(x = "APP_ARTIFACTS_DIR", "/tmp/"),"Points_With_Clusters.csv"),row.names=FALSE)
-    #write.csv(result.df.csv,file="Points_With_Clusters.csv",row.names=FALSE) 
-    
-    if (!is.na(heightname)) selnames <- c("clusterID","tagID","n.ids","n.locs","cumlag.locs","n.locsout","n.revs","timestamp.local","location.long","location.lat","date.local","time.local","local.timezone","animalID","ground.speed","heading",heightname,"clu.centr.long","clu.centr.lat")[ixcsv] else selnames <- c("clusterID","tagID","n.ids","n.locs","cumlag.locs","n.locsout","n.revs","timestamp.local","location.long","location.lat","date.local","time.local","local.timezone","animalID","ground.speed","heading","clu.centr.long","clu.centr.lat")[ixcsv]
-    result@data <- data.frame(result@data,coo)
-    sel <- which(names(result@data) %in% selnames)
-    result@data <- data.frame(result@data[,selnames],result@data[-sel])
-   
-    #force moveStack if only one ID (can lead to strange error)
-    if (is(result,'Move')) {
-      result <- moveStack(result,forceTz="UTC")
-    }
-    
-  } else result <- NULL
-  
-  # the use of package recurse or adehabitatLT does only work on tracks, but not for clusters by all animals...
-  return(result)
-}
+  #}
+  #return(result)
+
+clus_res <- prop.rest.df[duplicated(prop.rest.df)==F,]
+
+# Add a colour colum
+clus_age <- t-ymd_hms(clus_res$timestamp.last)
+clus_res$col <- NA
+clus_res$col[clus_age<24] <- "red"
+clus_res$col[clus_age>24 & clus_age<48] <- "orange"
+clus_res$col[clus_age>48] <- "blue"
+
+# # Leaflet the data and add the output
+# cols <- c("red", "blue")
+# 
+# m <- leaflet() %>%
+#   # Add a satellite image layer
+#   addProviderTiles(providers$OpenStreetMap.Mapnik) #%>%     
+# 
+#  m <- m %>%
+#         addCircleMarkers(lng=sub_dat_df$location_long,
+#                          lat=sub_dat_df$location_lat, 
+#                          popup=paste(sub_dat_df$timestamp),
+#                          fillOpacity = 0.3, opacity = 0.5, radius=2, color=cols[as.numeric(sub_dat$ground_speed<1)+1]) 
+# 
+#  m <- leaflet() %>%
+#   # Add a satellite image layer
+#   addProviderTiles(providers$OpenStreetMap.Mapnik) #%>%     
+# 
+#  m <- m %>%
+#         addCircleMarkers(lng=sub_dat_df$location_long,
+#                          lat=sub_dat_df$location_lat, 
+#                          popup=paste(sub_dat_df$timestamp),
+#                          fillOpacity = 0.3, opacity = 0.5, radius=2, color=cols[as.numeric(sub_dat_df$speed<0.1)+1]) 
+# 
+# m 
+#  
+#    
+#   m <- m %>%
+#         addCircleMarkers(lng=tmp$rest.mean.long,
+#                          lat=tmp$rest.mean.lat, 
+#                          popup=paste("duration =",tmp$rest.duration, "npos =",tmp$rest.nposi),
+#                          fillOpacity = 0.3, opacity = 0.7, radius=4, color="orange") 
+# 
+# m  
+ 
+
+
+
+m <- leaflet() %>%
+  # Add a satellite image layer  
+  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
+  m <- m %>%
+        addPolylines(data = dat_shp, color = dat_shp$colours, weight=3,opacity=0.3, popup=dat_shp$animalName) %>% 
+        addCircleMarkers(lng=clus_res$rest.mean.long,
+                         lat=clus_res$rest.mean.lat, 
+                         popup=paste("name"=clus_res$local.identifier, 
+                                     "<br>duration =",round(clus_res$rest.duration,1), "h", 
+                                     "<br>npos =",clus_res$rest.nposi, " Radius =" ,round(clus_res$rest.radius,1),"m",
+                                     "<br>lon =" ,round(clus_res$rest.mean.lon,6)  , "lat =", round(clus_res$rest.mean.lat,6)) 
+                                     ,
+                          fillOpacity = 0.3, opacity = 0.7, radius=4, color=clus_res$col)%>%
+      addScaleBar(position="topleft", 
+                  options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
+      addLayersControl(
+        baseGroups = c("OS", "Simple", "Satellite"),
+        options = layersControlOptions(collapsed = FALSE)
+      )  %>% 
+    addLegend(position="topright", labels=c("<24", "24-48", "48+"), colors=c("red","orange","blue"), title="Cluster age")
+
+  m
+
+
+# Also include night'time sleep locations? Would that be useful?
+
+# Cluster map
+
+# - Nighttime locations
+# - Last 72 hours - can we colour code --> based on recent locations 
+# - Work flow
+# Open cluster tab
+# Identify accessible clusters
+  # Gps points
+  # Size of the spread
+# Make sure 
+# Cheris look at master protocol --> 
+
 ```
+
 
 # Hardware function and settings
 

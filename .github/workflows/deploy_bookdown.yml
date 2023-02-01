@@ -51,6 +51,12 @@ jobs:
         run: Rscript -e "install.packages('purrr')"
       - name: Install readxl
         run: Rscript -e "install.packages('readxl')"
+      - name: Install geosphere
+        run: Rscript -e "install.packages('geosphere')"
+      - name: Install foreach
+        run: Rscript -e "install.packages('foreach')"
+      - name: Install maptools
+        run: Rscript -e "install.packages('maptools')"
       - name: Render Book
         env: 
           GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
