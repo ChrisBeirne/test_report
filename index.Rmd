@@ -268,7 +268,14 @@ m <- leaflet() %>%
         addCircleMarkers(lng=last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
                          lat=last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]]), 
                          popup=paste(last(tmp_cr$timestamp[tmp_cr$animalName==ids[i]])),
-                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F)
+                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F) %>% 
+        # Add the last point
+        addMarkers(lng=last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
+                         lat=last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]]), 
+                         popup=paste(last(tmp_cr$local_identifier[tmp_cr$animalName==ids[i]]),
+                                     "<br>Time:",last(tmp_cr$timestamp[tmp_cr$animalName==ids[i]]),
+                                     "<br>Long:",last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
+                                     "<br>Lat:",last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]]))) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
@@ -601,8 +608,8 @@ Key:
 - The colors denote how recently the cluster started (Red >24 hours; orange 24-48 hours; blue 48-72 hours)
 - Hover over the circle for gps coordinates, cluster radius, number of points in the cluster and duration of the event
 
-## Costa Rica
-```{r, eval=T, ech=F}
+### Costa Rica
+```{r, eval=T, echo=F, message=F, warning=F}
 # Code derived from
 # https://github.com/movestore/Daily-Rest-Sites
 #library('maptools')
