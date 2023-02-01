@@ -2,6 +2,8 @@ tracker-status-checker
 last-48-hours
 costa-rica
 peru
+cluster-detection
+costa-rica-1
 hardware-function-and-settings
 battery-status
 location-accuracy
