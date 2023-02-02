@@ -1102,6 +1102,18 @@ m <- leaflet() %>%
       )  %>% 
     addLegend(position="topright", labels=c("<24", "24-48", "48+"), colors=c("red","orange","blue"), title="Cluster age")
 
+ids <- unique(sub_dat_df$animalName)  
+
+  for(i in 1:length(ids))      
+        # The last point
+  m <-   m %>%   addMarkers(lng=last(sub_dat_df$location_long[sub_dat_df$animalName==ids[i]]),
+                         lat=last(sub_dat_df$location_lat[sub_dat_df$animalName==ids[i]]), 
+                         popup=paste(last(sub_dat_df$local_identifier[sub_dat_df$animalName==ids[i]]),
+                                     "<br>Time:",last(sub_dat_df$timestamp[sub_dat_df$animalName==ids[i]]),
+                                     "<br>Long:",last(sub_dat_df$location_long[sub_dat_df$animalName==ids[i]]),
+                                     "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$animalName==ids[i]])))
+  
+  
   m
 
 
