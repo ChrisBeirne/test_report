@@ -80,6 +80,19 @@ dat <- as.data.frame(mov_dat)
 # Convert dat to costa rica time
 dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
 
+
+# Setup the leaflet icon
+leafIcons <- icons(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small1.png",
+  iconWidth = 38, iconHeight = 40,
+  iconAnchorX = 22, iconAnchorY = 39,
+  shadowUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small_shadow.png",
+  shadowWidth = 38, shadowHeight = 30,
+  shadowAnchorX = 4, shadowAnchorY = 39
+)
+
+
+
 ```
 
 *Last data request: `r now(tzone = "America/Costa_Rica")`*
@@ -275,7 +288,8 @@ m <- leaflet() %>%
                          popup=paste(last(tmp_cr$local_identifier[tmp_cr$animalName==ids[i]]),
                                      "<br>Time:",last(tmp_cr$timestamp[tmp_cr$animalName==ids[i]]),
                                      "<br>Long:",last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
-                                     "<br>Lat:",last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]]))) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
+                                     "<br>Lat:",last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]])),
+                   icon = leafIcons) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
@@ -510,7 +524,8 @@ m <- leaflet() %>%
                          popup=paste(last(tmp_cr_48$local_identifier[tmp_cr_48$animalName==ids[i]]),
                                      "<br>Time:",last(tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]]),
                                      "<br>Long:",last(tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]]),
-                                     "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]]))) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
+                                     "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]])),
+                   icon = leafIcons) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
@@ -1111,7 +1126,8 @@ ids <- unique(sub_dat_df$animalName)
                          popup=paste(last(sub_dat_df$local_identifier[sub_dat_df$animalName==ids[i]]),
                                      "<br>Time:",last(sub_dat_df$timestamp[sub_dat_df$animalName==ids[i]]),
                                      "<br>Long:",last(sub_dat_df$location_long[sub_dat_df$animalName==ids[i]]),
-                                     "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$animalName==ids[i]])))
+                                     "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$animalName==ids[i]])),
+                   icon = leafIcons)
   
   
   m
