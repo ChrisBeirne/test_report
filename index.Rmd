@@ -621,7 +621,7 @@ The following map shows all of the clusters which have occurred in the previous 
 
 - Prioritize recent clusters - we are more likely to find a carcass if a vulture was feeding recently
 - Prioritize accessible clusters - not all of these clusters will be accessible, you should figure out which would be the easiest to visit
-- Prioritise clusters with multipke individuals - if more than one individual has visited a cluster, this could suggest a large feeding event
+- Prioritize clusters with multiple individuals - if more than one individual has visited a cluster, this could suggest a large feeding event
 
 Key:
 - Colored circles denote clusters of > than 1 hour duration, where the vultures have low distances travelled
@@ -1632,7 +1632,7 @@ first_and_last$night_id <- paste0("n_", as.numeric(as.factor(substr(first_and_la
 #night_dat_df <- as.data.frame(night_dat)
 
 
-night_dat_df <- night_dat_df[order(night_dat_df$name),]
+#night_dat_df <- night_dat_df[order(night_dat_df$name),]
 first_and_last <- first_and_last[order(first_and_last$name),]
 #Convert from tibble
 first_and_last <- as.data.frame(first_and_last)
@@ -1655,7 +1655,7 @@ cr_cols$animalName[cr_cols$animalName=="Robin Hood"][1] <- "Robin.Hood"
  
 night_shp <- left_join(night_shp, cr_cols)
 
-night_dat_df <- left_join(night_dat_df, cr_cols, by=c("name"= "animalName"))
+#night_dat_df <- left_join(night_dat_df, cr_cols, by=c("name"= "animalName"))
 first_and_last <- left_join(first_and_last, cr_cols, by=c("name"= "animalName"))
 
 tmp <- first_and_last %>% group_by(name) %>%  dplyr::summarise(nights=n_distinct(night_id))
