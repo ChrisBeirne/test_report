@@ -66,8 +66,6 @@ animals <- animals[animals$sensor_type_id==653,]
 # Clean up the name
 animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ .*', '', animals$taxon_canonical_name))
 
-#Add the names
-mov_dat$name <- trackId(mov_dat)
 
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
@@ -76,6 +74,10 @@ start_t <- t-as.difftime(14,units='days')
 
 mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
+
+
+#Add the names
+mov_dat$name <- trackId(mov_dat)
 
 
 # Covert timezone
