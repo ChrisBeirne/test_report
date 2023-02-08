@@ -16,7 +16,7 @@ link-citations: yes
 This document summarize the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
 
 ```{r c01, echo=F, message=F, include=F}
-library(rgdal)
+library(rgdal) 
 library(move)
 library(dplyr)
 library(leaflet)
@@ -50,8 +50,8 @@ options(googledrive_quiet = TRUE)
 
 
 # Import passcodes
-#MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
-#MOVE_USE  <- Sys.getenv("MOVEBANK_USERNAME")
+MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
+MOVE_USE  <- Sys.getenv("MOVEBANK_USERNAME")
 
 loginStored <- movebankLogin(username=MOVE_USE, 
                              password=MOVE_PASS)
@@ -155,7 +155,7 @@ dat_shp  <- left_join(dat_shp,sp_dat)
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
-last_obs <- dat %>% group_by(animalName) %>% summarize(hours_since_fix=min(diff_time))
+last_obs <- dat %>% group_by(animalName) %>% dplyr::summarize(hours_since_fix=min(diff_time))
 
 last_sum  <- dat %>% 
   group_by(animalName) %>%
