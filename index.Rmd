@@ -1599,7 +1599,9 @@ Roost = A bird temporarily spending a night at a location but moving frequently
 
 Potential nest = A bird returning to the same location through time (across multple days and weeks)
 
-```{r}
+**In progress**
+
+```{r, eval=F, echo=F}
 sub_dat <- mov_dat[mov_dat$location_lat>0,]
 # remove empty levels
 sub_dat$name <- factor(sub_dat$name)
@@ -1729,7 +1731,7 @@ pts_agg <- aggregate(laf_sf,
                      by=list(laf_sf$id),
                      FUN = mean,
                      join = function(x, y))
-?st_is_within_distance
+
 
 # I should merge the morning and night to make things easier
 
@@ -1742,10 +1744,6 @@ R1 <- laf_sf %>% aggregate(.,
   
 
 ```
-
-
-
-
 
 
 # Hardware function and settings
