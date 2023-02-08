@@ -5,6 +5,7 @@ peru
 cluster-detection
 costa-rica-1
 roost-and-nest-sites
+nighttime-roost-movement-summary
 hardware-function-and-settings
 battery-status
 location-accuracy
