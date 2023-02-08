@@ -4,6 +4,7 @@ costa-rica
 peru
 cluster-detection
 costa-rica-1
+roost-and-nest-sites
 hardware-function-and-settings
 battery-status
 location-accuracy
