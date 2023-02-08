@@ -1596,17 +1596,17 @@ The following map shows the locations where birds spend the night.
 
 Roost = A bird temporarily spending a night at a location but moving frequently
 
-Potential nest = A bird returning to the same location through time (across multple days and weeks)
+Potential nest = A bird returning to the same location through time (across multiple days and weeks)
 
-**In progress**
+### Nighttime roost movement summary
 
-```{r, eval=F, echo=F}
+If a birds night-time roost is does not change then the average roost spacing will be very low (<0.5 km - green rows). We should also look at the data where the average roost spacing is <1km (orange rows). All other rows are white:
+
+```{r, eval=T, echo=F, warning=F, message=F}
 sub_dat <- mov_dat[mov_dat$location_lat>0,]
 # remove empty levels
 sub_dat$name <- factor(sub_dat$name)
 
-# Get speed info
-sub_dat$speed <- unlist(lapply(speed(sub_dat),c, NA ))
 
 sub_dat_df <- as.data.frame(sub_dat)
 sub_dat_df$id <- paste0(sub_dat_df$name,"_", substr(sub_dat_df$timestamp,1,10))
@@ -1619,7 +1619,7 @@ first_and_last <- sub_dat_df %>%
 
 # Create a night column -> where each unique night has its own ID
 first_and_last$night_id <- paste0("n_", as.numeric(as.factor(substr(first_and_last$timestamp - hours(12),1,10))))
-first_and_last[, c("name", "timestamp", "night_id")]
+#first_and_last[, c("name", "timestamp", "night_id")]
 # Great - remove n_1 as there should only be on observation
 
 
@@ -1629,27 +1629,61 @@ first_and_last[, c("name", "timestamp", "night_id")]
 
 
 #plot(night_dat)
-night_dat_df <- as.data.frame(night_dat)
+#night_dat_df <- as.data.frame(night_dat)
 
 
 night_dat_df <- night_dat_df[order(night_dat_df$name),]
-lfc <- do.call(st_sfc,
-              lapply(split(night_dat_df, night_dat_df$name),
-                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-night_shp <- st_sf(data.frame(animalName=levels(factor(night_dat_df[,"name"])), geom=lfc))
+first_and_last <- first_and_last[order(first_and_last$name),]
+#Convert from tibble
+first_and_last <- as.data.frame(first_and_last)
 
-night_shp$animalName
+lfc <- do.call(st_sfc,
+              lapply(split(first_and_last, first_and_last$name),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+night_shp <- st_sf(data.frame(animalName=levels(factor(first_and_last[,"name"])), geom=lfc))
+
+st_crs(night_shp) <- 4326
+
 # Add the colours
 cr_cols <- tmp_cr[, c("animalName", "colours")]
 cr_cols <- cr_cols[duplicated(cr_cols)==F,]
+cr_cols$animalName<- sub('\\_.*', '', cr_cols$animalName)
+
 cr_cols <- rbind(cr_cols, cr_cols[cr_cols$animalName=="Robin Hood",])
 cr_cols$animalName <- as.character(cr_cols$animalName)
 cr_cols$animalName[cr_cols$animalName=="Robin Hood"][1] <- "Robin.Hood"
+ 
 night_shp <- left_join(night_shp, cr_cols)
+
 night_dat_df <- left_join(night_dat_df, cr_cols, by=c("name"= "animalName"))
+first_and_last <- left_join(first_and_last, cr_cols, by=c("name"= "animalName"))
 
-plot(night_shp)
+tmp <- first_and_last %>% group_by(name) %>%  dplyr::summarise(nights=n_distinct(night_id))
+night_shp <- left_join(night_shp, tmp, by=c("animalName"="name"))
 
+night_shp$roost_spacing_km <- round(as.numeric((st_length(night_shp)/1000)/night_shp$nights),1)
+
+night_shp_df <- as.data.frame(night_shp)
+night_shp_df$geometry<- NULL
+
+night_shp_df <- night_shp_df[,c("animalName", "roost_spacing_km"),]
+night_shp_df <- night_shp_df[order(night_shp_df$roost_spacing_km),]
+
+# Determine colours
+night_shp_df$col <- "white"
+night_shp_df$col[night_shp_df$roost_spacing_km<0.5] <- "#99d8c9"
+night_shp_df$col[night_shp_df$roost_spacing_km>0.5 & night_shp_df$roost_spacing_km<1 ] <- "#ffeda0"
+
+night_shp_df[,c("animalName", "roost_spacing_km")] %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()  %>% 
+  column_spec(c(1,2), background = night_shp_df$col)
+
+```
+
+You can see the distribution of the nightime locations with the following map.  Where: the points mark the first and last observations from each day, and the lines connect those points. Animals which are nesting will have a very tight cluster of points. 
+
+```{r, eval=T, echo=F}
 m <- leaflet() %>%
   # Add a satellite image layer  
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
@@ -1657,10 +1691,10 @@ m <- leaflet() %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
         addPolylines(data = night_shp, color = night_shp$colours, weight=3,opacity=0.3, popup=night_shp$name) %>% 
-        addCircleMarkers(lng=night_dat_df$location_long,
-                         lat=night_dat_df$location_lat, 
-                         popup=paste("name"=night_dat_df$name),
-                         fillOpacity = 0.3, opacity = 0.7, radius=4, color=night_dat_df$colours)%>%
+        addCircleMarkers(lng=first_and_last$location_long,
+                         lat=first_and_last$location_lat, 
+                         popup=paste("name"=first_and_last$name, "<br>Time = ", substr(first_and_last$timestamp,12,16)),
+                         fillOpacity = 0.3, opacity = 0.7, radius=4, color=first_and_last$colours)%>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
@@ -1673,74 +1707,74 @@ m <- leaflet() %>%
   
 m
 
+# Not required
 
-
-# Clustering test
-
-library(sp)
-library(rgdal)
-library(geosphere)
-
-# example data from the thread
-x <- c(-1.482156, -1.482318, -1.482129, -1.482880, -1.485735, -1.485770, -1.485913, -1.484275, -1.485866)
-y <- c(54.90083, 54.90078, 54.90077, 54.90011, 54.89936, 54.89935, 54.89935, 54.89879, 54.89902)
-
-# convert data to a SpatialPointsDataFrame object
-xy <- SpatialPointsDataFrame(
-      matrix(c(first_and_last$location_long,first_and_last$location_lat), ncol=2), data.frame(ID=seq(1:nrow(first_and_last))),
-      proj4string=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
-
-# use the distm function to generate a geodesic distance matrix in meters
-mdist <- distm(xy)
-
-# cluster all points using a hierarchical clustering approach
-hc <- hclust(as.dist(mdist), method="complete")
-
-# define the distance threshold, in this case 40 m
-d=200
-
-# define clusters based on a tree "height" cutoff "d" and add them to the SpDataFrame
-xy$clust <- cutree(hc, h=d)
-first_and_last$clust_id <- xy$clust
-first_and_last$name
-
-
-
-nest_res <- first_and_last %>% group_by(name) %>% summarise(nights=n_distinct(night_id), clusters=n_distinct(clust_id))
-nest_res$nest_index <- 1-(nest_res$clusters/nest_res$nights)
-library(amt)
-hr_area(laf_sf)
-
-test <- first_and_last[first_and_last$name=="Attenborough",]
-
-plot(test$location_long, test$location_lat, col=test$cust)
-
-
-
-test <- first_and_last[first_and_last$name=="Frosty",]
-
-plot(test$location_long, test$location_lat, col=test$cust)
-
-
-
-#Aggregateing nights
-laf_sf <- st_as_sf(first_and_last, coords=c("location_long", "location_lat"), crs=4327)
-
-pts_agg <- aggregate(laf_sf,
-                     by=list(laf_sf$id),
-                     FUN = mean,
-                     join = function(x, y))
-
-
-# I should merge the morning and night to make things easier
-
-R1 <- laf_sf %>% aggregate(., 
-                by = list(.$id), 
-                function(x) x = x[1]) %>% 
-  st_centroid() %>% 
-  select(-Group.1)
-
-  
+# # Clustering test
+# 
+# library(sp)
+# library(rgdal)
+# library(geosphere)
+# 
+# # example data from the thread
+# x <- c(-1.482156, -1.482318, -1.482129, -1.482880, -1.485735, -1.485770, -1.485913, -1.484275, -1.485866)
+# y <- c(54.90083, 54.90078, 54.90077, 54.90011, 54.89936, 54.89935, 54.89935, 54.89879, 54.89902)
+# 
+# # convert data to a SpatialPointsDataFrame object
+# xy <- SpatialPointsDataFrame(
+#       matrix(c(first_and_last$location_long,first_and_last$location_lat), ncol=2), data.frame(ID=seq(1:nrow(first_and_last))),
+#       proj4string=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
+# 
+# # use the distm function to generate a geodesic distance matrix in meters
+# mdist <- distm(xy)
+# 
+# # cluster all points using a hierarchical clustering approach
+# hc <- hclust(as.dist(mdist), method="complete")
+# 
+# # define the distance threshold, in this case 40 m
+# d=200
+# 
+# # define clusters based on a tree "height" cutoff "d" and add them to the SpDataFrame
+# xy$clust <- cutree(hc, h=d)
+# first_and_last$clust_id <- xy$clust
+# first_and_last$name
+# 
+# 
+# 
+# nest_res <- first_and_last %>% group_by(name) %>% summarise(nights=n_distinct(night_id), clusters=n_distinct(clust_id))
+# nest_res$nest_index <- 1-(nest_res$clusters/nest_res$nights)
+# library(amt)
+# hr_area(laf_sf)
+# 
+# test <- first_and_last[first_and_last$name=="Attenborough",]
+# 
+# plot(test$location_long, test$location_lat, col=test$cust)
+# 
+# 
+# 
+# test <- first_and_last[first_and_last$name=="Frosty",]
+# 
+# plot(test$location_long, test$location_lat, col=test$cust)
+# 
+# 
+# 
+# #Aggregateing nights
+# laf_sf <- st_as_sf(first_and_last, coords=c("location_long", "location_lat"), crs=4327)
+# 
+# pts_agg <- aggregate(laf_sf,
+#                      by=list(laf_sf$id),
+#                      FUN = mean,
+#                      join = function(x, y))
+# 
+# 
+# # I should merge the morning and night to make things easier
+# 
+# R1 <- laf_sf %>% aggregate(., 
+#                 by = list(.$id), 
+#                 function(x) x = x[1]) %>% 
+#   st_centroid() %>% 
+#   select(-Group.1)
+# 
+#   
 
 ```
 
