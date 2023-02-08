@@ -50,8 +50,8 @@ options(googledrive_quiet = TRUE)
 
 
 # Import passcodes
-MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
-MOVE_USE  <- Sys.getenv("MOVEBANK_USERNAME")
+#MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
+#MOVE_USE  <- Sys.getenv("MOVEBANK_USERNAME")
 
 loginStored <- movebankLogin(username=MOVE_USE, 
                              password=MOVE_PASS)
@@ -187,7 +187,7 @@ check_in_summary[,c(1,2,3,5)] %>%
 check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
 
 ### Total locations Mean eobs battery power, eobs accuracy
-tmp_sum <- dat %>% group_by(animalName) %>% summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
+tmp_sum <- dat %>% group_by(animalName) %>% dplyr::summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
 #colnames(dat)
 
 check_in_summary <- left_join(check_in_summary, tmp_sum)
@@ -224,10 +224,9 @@ library(dplyr)
 
 fig <- plot_ly()
 # All vultures - Countries
-fig %>% add_pie(data = count(check_in_summary, country), labels = ~country, values = ~n,
+fig %>% add_pie(data = dplyr::count(check_in_summary, country), labels = ~country, values = ~n,
 
           name = "Country")
-
 ```
 
 And by species:
@@ -235,7 +234,7 @@ And by species:
 ```{r, echo=F}
 fig <- plot_ly()
 # All vultures - Species
-fig %>% add_pie(data = count(check_in_summary, taxon_canonical_name), labels = ~taxon_canonical_name, values = ~n,
+fig %>% add_pie(data = dplyr::count(check_in_summary, taxon_canonical_name), labels = ~taxon_canonical_name, values = ~n,
 
           name = "Species")
 
@@ -322,14 +321,14 @@ xform <- list(categoryorder = "array",
 tmp_cr$hour <- as.numeric(substr(tmp_cr$timestamp,12,13))
 tmp_cr$hour <- factor(tmp_cr$hour, levels=0:23)
 tmp_cr$animalName <- as.factor(tmp_cr$animalName)
-tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% summarize(obs=n())
+tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% dplyr::summarize(obs=n())
 
 # Tag activity - account for survey effort
-tmp_act_cr <- tmp_cr %>% group_by(animalName, .drop=F) %>% summarize(start=min(timestamp), end=max(timestamp))
+tmp_act_cr <- tmp_cr %>% group_by(animalName, .drop=F) %>% dplyr::summarize(start=min(timestamp), end=max(timestamp))
 
 tmp_act_cr$duration <- as.numeric(difftime(tmp_act_cr$end, tmp_act_cr$start))
 
-tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% summarize(obs=n())
+tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% dplyr::summarize(obs=n())
 
 tmp_cr2 <- left_join(tmp_cr2, tmp_act_cr)
 
@@ -452,7 +451,7 @@ tmp_peru$hour <- factor(tmp_peru$hour, levels=0:23)
 
 tmp_peru$animalName <- as.factor(tmp_peru$animalName)
 
-tmp_peru2 <- tmp_peru %>% group_by(animalName, hour, .drop=F) %>% summarize(obs=n())
+tmp_peru2 <- tmp_peru %>% group_by(animalName, hour, .drop=F) %>% dplyr::summarize(obs=n())
 
 
 fig <- plot_ly(tmp_peru2, x = ~hour, y = ~obs, name = tmp_peru2$animalName, type = 'scatter', mode = 'lines',split = ~animalName) 
@@ -943,9 +942,9 @@ radius=100
                   #data.sel$timestamp
                   data.rem <- data.nightikj[-c(which(backdt<=duration),last),]
                   #data.rem$timestamp
-                  plot(data.nightikj$location.long, data.nightikj$location.lat)
-                  points(data.sel$location.long, data.sel$location.lat, col="green")
-                  points(data.rem$location.long, data.rem$location.lat, col="red")
+                  #plot(data.nightikj$location.long, data.nightikj$location.lat)
+                  #points(data.sel$location.long, data.sel$location.lat, col="green")
+                  #points(data.rem$location.long, data.rem$location.lat, col="red")
                   
                 } else
                 {
@@ -964,7 +963,7 @@ radius=100
                 {
                   ## check if already longer at this rest site
                   mid <- midPoint(p0,p1)
-                  points(mid[1], mid[2], col="blue")
+                  #points(mid[1], mid[2], col="blue")
                   data.bef <- data.rem
                   if (length(data.bef)>=1)
                   {
@@ -987,7 +986,7 @@ radius=100
                   
                   data.selx.df <- data.frame(as.data.frame(moveStack(data.selx)),coordinates(data.selx))
                   # Check what is in there
-                  points(data.selx.df$location.long, data.selx.df$location.lat, col="yellow", pch=19)
+                  #points(data.selx.df$location.long, data.selx.df$location.lat, col="yellow", pch=19)
                   # looks good
                   
                   Nselx <- dim(data.selx.df)[2]
@@ -1001,7 +1000,7 @@ radius=100
                   if (durx>=duration & radx<=radius) #added this condition to only save rest sites of given duration (if this condition is left out also rest site with shorter duration are given back)
                   {
                     data.resti.df <- rbind(data.resti.df,data.selx.df)
-                    points(data.resti.df$location.long, data.resti.df$location.lat, pch="x")
+                    #points(data.resti.df$location.long, data.resti.df$location.lat, pch="x")
                     
                     
                     if (window=="all")
