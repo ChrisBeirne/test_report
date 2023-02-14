@@ -1128,7 +1128,7 @@ m <- leaflet() %>%
                                      "<br>time =",substr(clus_res$timestamp.first, 12,16), "-", substr(clus_res$timestamp.last, 12,16),
                                      "<br>npos =",clus_res$rest.nposi, " Radius =" ,round(clus_res$rest.radius,1),"m",
                                      "<br>lon =" ,round(clus_res$rest.mean.lon,6)  , "lat =", round(clus_res$rest.mean.lat,6),
-                                     "<br>lon =", clus_res$code) 
+                                     "<br>code =", clus_res$code) 
                                      ,
                           fillOpacity = 0.3, opacity = 0.7, radius=4, color=clus_res$col)%>%
       addScaleBar(position="topleft", 
@@ -1169,13 +1169,14 @@ ids <- unique(sub_dat_df$animalName)
 # Make sure 
 # Cheris look at master protocol --> 
   
-  
-
 ```
+
+
+
 
 The following is a list of all of the clusters in the above map, ordered by age (newest first):
 
-```{r}
+```{r, echo=F, warning=F, message=F}
  tmp <- clus_res[,c("local.identifier","timestamp.first", "rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
  tmp <- tmp[order(tmp$timestamp.first),]
  colnames(tmp) <- c("name", "start_time", "long", "lat", "npos", "duration", "code")
