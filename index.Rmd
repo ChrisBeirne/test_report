@@ -1078,7 +1078,7 @@ clus_res$col[clus_age>48] <- "blue"
 # Convert the timestamps
 clus_res$timestamp.first <- with_tz(ymd_hms(clus_res$timestamp.first), tz="America/Costa_Rica")
 clus_res$timestamp.last <- with_tz(ymd_hms(clus_res$timestamp.last), tz="America/Costa_Rica")
-
+clus_res$code <- paste0(toupper(substr(clus_res$local.identifier,1,3)),"_", substr(clus_res$timestamp.first,12,13),substr(clus_res$timestamp.first,3,4),substr(clus_res$timestamp.first,6,7),substr(clus_res$timestamp.first,9,10))  
 
 # # Leaflet the data and add the output
 # cols <- c("red", "blue")
@@ -1127,7 +1127,8 @@ m <- leaflet() %>%
                                      "<br>duration =",round(clus_res$rest.duration,1), "h", 
                                      "<br>time =",substr(clus_res$timestamp.first, 12,16), "-", substr(clus_res$timestamp.last, 12,16),
                                      "<br>npos =",clus_res$rest.nposi, " Radius =" ,round(clus_res$rest.radius,1),"m",
-                                     "<br>lon =" ,round(clus_res$rest.mean.lon,6)  , "lat =", round(clus_res$rest.mean.lat,6)) 
+                                     "<br>lon =" ,round(clus_res$rest.mean.lon,6)  , "lat =", round(clus_res$rest.mean.lat,6),
+                                     "<br>lon =", clus_res$code) 
                                      ,
                           fillOpacity = 0.3, opacity = 0.7, radius=4, color=clus_res$col)%>%
       addScaleBar(position="topleft", 
@@ -1172,6 +1173,19 @@ ids <- unique(sub_dat_df$animalName)
 
 ```
 
+The following is a list of all of the clusters in the above map, ordered by age (newest first):
+
+```{r}
+ tmp <- clus_res[,c("local.identifier","timestamp.first", "rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
+ tmp <- tmp[order(tmp$timestamp.first),]
+ colnames(tmp) <- c("name", "start_time", "long", "lat", "npos", "duration", "code")
+ tmp$duration <- round(tmp$duration,1)
+
+  tmp %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling() 
+
+```
 
 
 ```{r, echo=F, eval=F}
@@ -1693,7 +1707,8 @@ m <- leaflet() %>%
         addPolylines(data = night_shp, color = night_shp$colours, weight=3,opacity=0.3, popup=night_shp$name) %>% 
         addCircleMarkers(lng=first_and_last$location_long,
                          lat=first_and_last$location_lat, 
-                         popup=paste("name"=first_and_last$name, "<br>Time = ", substr(first_and_last$timestamp,12,16)),
+                         popup=paste("name"=first_and_last$name, "<br>Time = ", substr(first_and_last$timestamp,12,16), "Date = ",substr(first_and_last$timestamp,1,10),
+                                  "<br>Lon = ", round(first_and_last$location_long,6), "Lat = ",round(first_and_last$location_lat,6)),
                          fillOpacity = 0.3, opacity = 0.7, radius=4, color=first_and_last$colours)%>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
