@@ -268,6 +268,7 @@ We currently have `r length(unique(tmp_cr$animalName))` vultures transmitting da
 ```{r, echo=F}
 # New map
 ids <- tmp_cr_shp$animalName
+names <- sub('\\_.*', '', tmp_cr_shp$animalName)
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
@@ -294,12 +295,12 @@ m <- leaflet() %>%
                                      "<br>Time:",last(tmp_cr$timestamp[tmp_cr$animalName==ids[i]]),
                                      "<br>Long:",last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
                                      "<br>Lat:",last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]])),
-                   icon = leafIcons) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
+                   icon = leafIcons, group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
-      addLegend(position= "topright", colors=tmp_cr_shp$colours, 
-                labels=ids ,opacity = 0.7, title = "Animals") %>%
+      #addLegend(position= "topright", colors=tmp_cr_shp$colours, 
+       #         labels=names ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
@@ -530,12 +531,12 @@ m <- leaflet() %>%
                                      "<br>Time:",last(tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]]),
                                      "<br>Long:",last(tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]]),
                                      "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]])),
-                   icon = leafIcons) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
+                   icon = leafIcons, group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
-      addLegend(position= "topright", colors=tmp_cr_48_shp$colours, 
-                labels=ids ,opacity = 0.7, title = "Animals") %>%
+      #addLegend(position= "topright", colors=tmp_cr_48_shp$colours, 
+      #          labels=ids ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
@@ -1705,7 +1706,7 @@ m <- leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
-        addPolylines(data = night_shp, color = night_shp$colours, weight=3,opacity=0.3, popup=night_shp$name) %>% 
+        addPolylines(data = night_shp, color = night_shp$colours, weight=3,opacity=0.3, popup=night_shp$name, group=night_shp$animalName) %>% 
         addCircleMarkers(lng=first_and_last$location_long,
                          lat=first_and_last$location_lat, 
                          popup=paste("name"=first_and_last$name, "<br>Time = ", substr(first_and_last$timestamp,12,16), "Date = ",substr(first_and_last$timestamp,1,10),
@@ -1715,10 +1716,11 @@ m <- leaflet() %>%
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
         baseGroups = c("OS", "Simple", "Satellite"),
+        overlayGroups = night_shp$animalName,
         options = layersControlOptions(collapsed = FALSE)
-      )  %>%
-     addLegend(position= "topright", colors=night_shp$colours, 
-                labels=night_shp$animalName ,opacity = 0.7, title = "Animals") 
+      )  #%>%
+     #addLegend(position= "topright", colors=night_shp$colours, 
+      #          labels=night_shp$animalName ,opacity = 0.7, title = "Animals") 
 
   
 m
