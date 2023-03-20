@@ -13,7 +13,7 @@ link-citations: yes
 
 # Tracker status checker
 
-This document summarize the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
+This document summarizes the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
 
 ```{r c01, echo=F, message=F, include=F}
 library(rgdal) 
@@ -61,11 +61,12 @@ animals <-getMovebankAnimals(study=1573471517,login=loginStored)
 # For some reason they are duplicated
 animals[duplicated(animals)==F,]
 # They vary by the field "sensor_type_id"
-animals <- animals[animals$sensor_type_id==653,]
+animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==F,]
 
 # Clean up the name
 animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ .*', '', animals$taxon_canonical_name))
-
+animals$name <- sub('\\_.*', '', animals$animalName)
+animals$name[animals$name=="Robin Hood"] <- "Robin.Hood"
 
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
@@ -79,8 +80,7 @@ mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicate
 #Add the names
 mov_dat$name <- trackId(mov_dat)
 
-
-# Covert timezone
+# Convert timezone
 mov_dat$timestamp <- with_tz(timestamps(mov_dat), tz="America/Costa_Rica")
 
 # all data
@@ -110,7 +110,7 @@ leafIcons <- icons(
   shadowWidth = 38, shadowHeight = 30,
   shadowAnchorX = 4, shadowAnchorY = 39
 )
-
+#?iconList()
 
 
 ```
@@ -131,17 +131,15 @@ dat$country[dat$country==F] <- "costa_rica"
 # Convert to shapefiles
 dat <- dat[order(dat$animalName),]
 
-
 lfc <- do.call(st_sfc,
-              lapply(split(dat, dat$animalName),
+              lapply(split(dat, dat$name),
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-dat_shp <- st_sf(data.frame(animalName=levels(factor(dat[,"animalName"])), geom=lfc))
+dat_shp <- st_sf(data.frame(name=levels(factor(dat[,"name"])), geom=lfc))
 
-#
 #plot(dat$location_long[dat$country=="costa_rica"], dat$location_lat[dat$country=="costa_rica"])
 #plot(st_geometry(dat_shp), add=T)
 
-sp_dat <- dat[,c("animalName",    "country", "taxon_canonical_name" )]
+sp_dat <- dat[,c("name",    "country", "taxon_canonical_name" )]
 sp_dat <- sp_dat[duplicated(sp_dat)==F,]
 
 # add back in the metadata
@@ -155,14 +153,14 @@ dat_shp  <- left_join(dat_shp,sp_dat)
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
-last_obs <- dat %>% group_by(animalName) %>% dplyr::summarize(hours_since_fix=min(diff_time))
+last_obs <- dat %>% group_by(name) %>% dplyr::summarize(hours_since_fix=min(diff_time))
 
 last_sum  <- dat %>% 
-  group_by(animalName) %>%
+  group_by(name) %>%
   slice(which.max(timestamp))
 
 
-tmp <- last_sum[, c("animalName","taxon_canonical_name","country", "timestamp", "diff_time")]
+tmp <- last_sum[, c("name","taxon_canonical_name","country", "timestamp", "diff_time")]
 colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
 colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
 check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
@@ -180,14 +178,15 @@ check_in_summary[,c(1,2,3,5)] %>%
   kable_styling()  %>%
     column_spec(4, color = "white",
               background = spec_color(tmp_col, begin=0,end = 0.7, direction=-1,
-                                      option="D", scale_from = c(12,120)))
+                                      option="D", scale_from = c(12,120)))%>%
+  kableExtra::scroll_box(width = "100%")
 
 
 ### Add additional data shown later
 check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
 
 ### Total locations Mean eobs battery power, eobs accuracy
-tmp_sum <- dat %>% group_by(animalName) %>% dplyr::summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
+tmp_sum <- dat %>% group_by(name) %>% dplyr::summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
 #colnames(dat)
 
 check_in_summary <- left_join(check_in_summary, tmp_sum)
@@ -198,7 +197,7 @@ check_in_summary$locs_per_day <- check_in_summary$total_obs/as.numeric(check_in_
 **Animals not seen for >14 days**
 
 ```{r  c05, echo=F}
-tmp2 <- animals[!(animals$animalName %in% tmp$animalName),]
+tmp2 <- animals[!(animals$name %in% tmp$name),]
 tmp2$timestamp_end <- with_tz(tmp2$timestamp_end, tzone = "America/Costa_Rica")
 #str(tmp2)
 tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, units="days")),1)
@@ -207,7 +206,7 @@ tmp2 <- tmp2[order(tmp2$days_since_check_in),]
 
 
 
-tmp2[, c("animalName", "timestamp_end", "days_since_check_in")] %>%
+tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
   kbl() %>%
   kable_styling()
 
@@ -253,22 +252,22 @@ tmp_cr_shp <- dat_shp[dat_shp$country=="costa_rica",]
 
 
 # First lets choose a category to colour
-tmp_cr[,"animalName"] <- factor(tmp_cr[,"animalName"])
-tmp_cr_shp$animalName <- factor(tmp_cr_shp$animalName)
+tmp_cr[,"name"] <- factor(tmp_cr[,"name"])
+tmp_cr_shp$name <- factor(tmp_cr_shp$name)
 
-col.cat <- turbo(length(levels(tmp_cr[,"animalName"])))
+col.cat <- turbo(length(levels(tmp_cr[,"name"])))
 # Add it to the dataframe
-tmp_cr$colours <- col.cat[tmp_cr[,"animalName"]]
-tmp_cr_shp$colours <- col.cat[tmp_cr_shp$animalName]
+tmp_cr$colours <- col.cat[tmp_cr[,"name"]]
+tmp_cr_shp$colours <- col.cat[tmp_cr_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_cr$animalName))` vultures transmitting data in Costa Rica:
+We currently have `r length(unique(tmp_cr$name))` vultures transmitting data in Costa Rica:
 
 ```{r, echo=F}
 # New map
-ids <- tmp_cr_shp$animalName
-names <- sub('\\_.*', '', tmp_cr_shp$animalName)
+ids <- tmp_cr_shp$name
+names <- sub('\\_.*', '', tmp_cr_shp$name)
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
@@ -280,21 +279,21 @@ m <- leaflet() %>%
     {
       m <- m %>%
         addPolylines(data = tmp_cr_shp[i,], color = tmp_cr_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
-        addCircleMarkers(lng=tmp_cr$location_long[tmp_cr$animalName==ids[i]],
-                         lat=tmp_cr$location_lat[tmp_cr$animalName==ids[i]], 
-                         popup=paste(tmp_cr$timestamp[tmp_cr$animalName==ids[i]]),
+        addCircleMarkers(lng=tmp_cr$location_long[tmp_cr$name==ids[i]],
+                         lat=tmp_cr$location_lat[tmp_cr$name==ids[i]], 
+                         popup=paste(tmp_cr$timestamp[tmp_cr$name==ids[i]]),
                          fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F) %>%
-        addCircleMarkers(lng=last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
-                         lat=last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]]), 
-                         popup=paste(last(tmp_cr$timestamp[tmp_cr$animalName==ids[i]])),
+        addCircleMarkers(lng=last(tmp_cr$location_long[tmp_cr$name==ids[i]]),
+                         lat=last(tmp_cr$location_lat[tmp_cr$name==ids[i]]), 
+                         popup=paste(last(tmp_cr$timestamp[tmp_cr$name==ids[i]])),
                          fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F) %>% 
         # Add the last point
-        addMarkers(lng=last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
-                         lat=last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]]), 
-                         popup=paste(last(tmp_cr$local_identifier[tmp_cr$animalName==ids[i]]),
-                                     "<br>Time:",last(tmp_cr$timestamp[tmp_cr$animalName==ids[i]]),
-                                     "<br>Long:",last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
-                                     "<br>Lat:",last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]])),
+        addMarkers(lng=last(tmp_cr$location_long[tmp_cr$name==ids[i]]),
+                         lat=last(tmp_cr$location_lat[tmp_cr$name==ids[i]]), 
+                         popup=paste(last(tmp_cr$local_identifier[tmp_cr$name==ids[i]]),
+                                     "<br>Time:",last(tmp_cr$timestamp[tmp_cr$name==ids[i]]),
+                                     "<br>Long:",last(tmp_cr$location_long[tmp_cr$name==ids[i]]),
+                                     "<br>Lat:",last(tmp_cr$location_lat[tmp_cr$name==ids[i]])),
                    icon = leafIcons, group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
     }
 
@@ -317,29 +316,28 @@ Daily schedule of the tags
 ```{r, echo=F, warning=F, message=F}
 
 xform <- list(categoryorder = "array",
-              categoryarray = c(check_in_summary$animalName))
+              categoryarray = c(check_in_summary$name))
 
 tmp_cr$hour <- as.numeric(substr(tmp_cr$timestamp,12,13))
 tmp_cr$hour <- factor(tmp_cr$hour, levels=0:23)
-tmp_cr$animalName <- as.factor(tmp_cr$animalName)
-tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% dplyr::summarize(obs=n())
+tmp_cr$name <- as.factor(tmp_cr$name)
+tmp_cr2 <- tmp_cr %>% group_by(name, hour, .drop=F) %>% dplyr::summarize(obs=n())
 
 # Tag activity - account for survey effort
-tmp_act_cr <- tmp_cr %>% group_by(animalName, .drop=F) %>% dplyr::summarize(start=min(timestamp), end=max(timestamp))
+tmp_act_cr <- tmp_cr %>% group_by(name, .drop=F) %>% dplyr::summarize(start=min(timestamp), end=max(timestamp))
 
-tmp_act_cr$duration <- as.numeric(difftime(tmp_act_cr$end, tmp_act_cr$start))
-
-tmp_cr2 <- tmp_cr %>% group_by(animalName, hour, .drop=F) %>% dplyr::summarize(obs=n())
+tmp_act_cr$duration <- as.numeric(difftime(tmp_act_cr$end, tmp_act_cr$start, units="days"))
+tmp_cr2 <- tmp_cr %>% group_by(name, hour, .drop=F) %>% dplyr::summarize(obs=n())
 
 tmp_cr2 <- left_join(tmp_cr2, tmp_act_cr)
 
 tmp_cr2$sampling_rate <- tmp_cr2$obs/tmp_cr2$duration
 
 # Add in the colour code
-cols <- col.cat[1:length(levels(tmp_cr2$animalName))]
+cols <- col.cat[1:length(levels(tmp_cr2$name))]
 
 
-fig <- plot_ly(tmp_cr2, x = ~hour, y = ~sampling_rate, name = tmp_cr2$animalName, type = 'scatter', mode = 'lines',split = ~animalName,color=~animalName, colors=cols) 
+fig <- plot_ly(tmp_cr2, x = ~hour, y = ~sampling_rate, name = tmp_cr2$name, type = 'scatter', mode = 'lines',split = ~name,color=~name, colors=cols) 
 fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
                       xaxis = xform,
                       xaxis = list(title = ""),
@@ -359,17 +357,17 @@ tmp_peru_shp <- dat_shp[dat_shp$country=="peru",]
 
 
 # First lets choose a category to colour
-tmp_peru[,"animalName"] <- factor(tmp_peru[,"animalName"])
-tmp_peru_shp$animalName <- factor(tmp_peru_shp$animalName)
+tmp_peru[,"name"] <- factor(tmp_peru[,"name"])
+tmp_peru_shp$name <- factor(tmp_peru_shp$name)
 
-col.cat <- turbo(length(levels(tmp_peru[,"animalName"])))
+col.cat <- turbo(length(levels(tmp_peru[,"name"])))
 # Add it to the dataframe
-tmp_peru$colours <- col.cat[tmp_peru[,"animalName"]]
-tmp_peru_shp$colours <- col.cat[tmp_peru_shp$animalName]
+tmp_peru$colours <- col.cat[tmp_peru[,"name"]]
+tmp_peru_shp$colours <- col.cat[tmp_peru_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_peru$animalName))` vultures transmitting data in Peru:
+We currently have `r length(unique(tmp_peru$name))` vultures transmitting data in Peru:
 
 ```{r, echo=F, eval=F}
 # Old map
@@ -384,11 +382,11 @@ m <- leaflet() %>%
                    radius=3,
                    stroke=F,
                    # Add a popup of the deployment code 
-                   popup=paste(tmp_peru$animalName, tmp_peru$timestamp)) %>%
+                   popup=paste(tmp_peru$name, tmp_peru$timestamp)) %>%
   addPolylines(data=tmp_peru_shp, color = tmp_peru_shp$colours, weight = 1, smoothFactor = 0.5,
               opacity = 1.0, fillOpacity = 0.5) %>% 
   # Add a legend explaining what is going on
-  addLegend("bottomright", colors = col.cat,  labels = levels(tmp_peru[,"animalName"]),
+  addLegend("bottomright", colors = col.cat,  labels = levels(tmp_peru[,"name"]),
             title = "Name",
             labFormat = labelFormat(prefix = "$"),
             opacity = 1
@@ -405,7 +403,7 @@ m
 
 ```{r, echo=F}
 # New map
-ids <- tmp_peru_shp$animalName
+ids <- tmp_peru_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
@@ -417,13 +415,13 @@ m <- leaflet() %>%
     {
       m <- m %>%
         addPolylines(data = tmp_peru_shp[i,], color = tmp_peru_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
-        addCircleMarkers(lng=tmp_peru$location_long[tmp_peru$animalName==ids[i]],
-                         lat=tmp_peru$location_lat[tmp_peru$animalName==ids[i]], 
-                         popup=paste(tmp_peru$timestamp[tmp_peru$animalName==ids[i]]),
+        addCircleMarkers(lng=tmp_peru$location_long[tmp_peru$name==ids[i]],
+                         lat=tmp_peru$location_lat[tmp_peru$name==ids[i]], 
+                         popup=paste(tmp_peru$timestamp[tmp_peru$name==ids[i]]),
                          fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_peru_shp$colours[i], group = ids[i], stroke=F) %>%
-        addCircleMarkers(lng=last(tmp_peru$location_long[tmp_peru$animalName==ids[i]]),
-                         lat=last(tmp_peru$location_lat[tmp_peru$animalName==ids[i]]), 
-                         popup=paste(last(tmp_peru$timestamp[tmp_peru$animalName==ids[i]])),
+        addCircleMarkers(lng=last(tmp_peru$location_long[tmp_peru$name==ids[i]]),
+                         lat=last(tmp_peru$location_lat[tmp_peru$name==ids[i]]), 
+                         popup=paste(last(tmp_peru$timestamp[tmp_peru$name==ids[i]])),
                          fillOpacity = 1, opacity = 1, radius=5, color = tmp_peru_shp$colours[i], group = ids[i], stroke=F)
     }
 
@@ -450,12 +448,12 @@ Daily schedule of the tags:
 tmp_peru$hour <- as.numeric(substr(tmp_peru$timestamp,12,13))
 tmp_peru$hour <- factor(tmp_peru$hour, levels=0:23)
 
-tmp_peru$animalName <- as.factor(tmp_peru$animalName)
+tmp_peru$name <- as.factor(tmp_peru$name)
 
-tmp_peru2 <- tmp_peru %>% group_by(animalName, hour, .drop=F) %>% dplyr::summarize(obs=n())
+tmp_peru2 <- tmp_peru %>% group_by(name, hour, .drop=F) %>% dplyr::summarize(obs=n())
 
 
-fig <- plot_ly(tmp_peru2, x = ~hour, y = ~obs, name = tmp_peru2$animalName, type = 'scatter', mode = 'lines',split = ~animalName) 
+fig <- plot_ly(tmp_peru2, x = ~hour, y = ~obs, name = tmp_peru2$name, type = 'scatter', mode = 'lines',split = ~name) 
 fig <- fig %>%  layout(title = "Hourly locations",
                       xaxis = xform,
                       xaxis = list(title = ""),
@@ -474,33 +472,37 @@ The following maps relate to just the last 48 hours of data. Use this to find in
 ```{r, echo=F, message=F, warning=F}
 # Subset to 48 hours
 tmp_cr_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(ymd_hms(animals$timestamp_end))-48*60*60,]
+tmp_cr_48$name <- as.character(tmp_cr_48$name)
 
 # Remake shapefiles
 lfc <- do.call(st_sfc,
-              lapply(split(tmp_cr_48, tmp_cr_48$animalName),
+              lapply(split(tmp_cr_48, tmp_cr_48$name),
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-tmp_cr_48_shp <- st_sf(data.frame(animalName=levels(factor(tmp_cr_48[,"animalName"])), geom=lfc))
+
+
+
+tmp_cr_48_shp <- st_sf(data.frame(name=levels(factor(tmp_cr_48[,"name"])), geom=lfc))
 
 # add back in the metadata
 tmp_cr_48_shp  <- left_join(tmp_cr_48_shp,sp_dat)
 
 
 # First lets choose a category to colour
-tmp_cr_48[,"animalName"] <- factor(tmp_cr_48[,"animalName"])
-tmp_cr_48_shp$animalName <- factor(tmp_cr_48_shp$animalName)
+tmp_cr_48[,"name"] <- factor(tmp_cr_48[,"name"])
+tmp_cr_48_shp$name <- factor(tmp_cr_48_shp$name)
 
-col.cat <- turbo(length(levels(tmp_cr_48[,"animalName"])))
+col.cat <- turbo(length(levels(tmp_cr_48[,"name"])))
 # Add it to the dataframe
-tmp_cr_48$colours <- col.cat[tmp_cr_48[,"animalName"]]
-tmp_cr_48_shp$colours <- col.cat[tmp_cr_48_shp$animalName]
+tmp_cr_48$colours <- col.cat[tmp_cr_48[,"name"]]
+tmp_cr_48_shp$colours <- col.cat[tmp_cr_48_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_cr$animalName))` vultures transmitting data in Costa Rica:
+We currently have `r length(unique(tmp_cr$name))` vultures transmitting data in Costa Rica:
 
 ```{r, echo=F}
 # New map
-ids <- tmp_cr_48_shp$animalName
+ids <- tmp_cr_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
@@ -514,23 +516,23 @@ m <- leaflet() %>%
         addPolylines(data = tmp_cr_48_shp[i,], color = tmp_cr_48_shp$colours[i], group = ids[i], weight=2,opacity=0.5)         %>%
         
         # All points
-        addCircleMarkers(lng=tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]],
-                         lat=tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]], 
+        addCircleMarkers(lng=tmp_cr_48$location_long[tmp_cr_48$name==ids[i]],
+                         lat=tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]], 
                          
-                         popup=paste(tmp_cr_48$local_identifier[tmp_cr_48$animalName==ids[i]],
-                                     "<br>Time:",tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]],
-                                     "<br>Long:",tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]],
-                                     "<br>Lat:",tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]]),
+                         popup=paste(tmp_cr_48$local_identifier[tmp_cr_48$name==ids[i]],
+                                     "<br>Time:",tmp_cr_48$timestamp[tmp_cr_48$name==ids[i]],
+                                     "<br>Long:",tmp_cr_48$location_long[tmp_cr_48$name==ids[i]],
+                                     "<br>Lat:",tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]]),
                          
                          fillOpacity = 0.3, opacity = 0.5, radius=3, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F) %>%
         
         # The last point
-        addMarkers(lng=last(tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]]),
-                         lat=last(tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]]), 
-                         popup=paste(last(tmp_cr_48$local_identifier[tmp_cr_48$animalName==ids[i]]),
-                                     "<br>Time:",last(tmp_cr_48$timestamp[tmp_cr_48$animalName==ids[i]]),
-                                     "<br>Long:",last(tmp_cr_48$location_long[tmp_cr_48$animalName==ids[i]]),
-                                     "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$animalName==ids[i]])),
+        addMarkers(lng=last(tmp_cr_48$location_long[tmp_cr_48$name==ids[i]]),
+                         lat=last(tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]]), 
+                         popup=paste(last(tmp_cr_48$local_identifier[tmp_cr_48$name==ids[i]]),
+                                     "<br>Time:",last(tmp_cr_48$timestamp[tmp_cr_48$name==ids[i]]),
+                                     "<br>Long:",last(tmp_cr_48$location_long[tmp_cr_48$name==ids[i]]),
+                                     "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]])),
                    icon = leafIcons, group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
     }
 
@@ -555,32 +557,34 @@ m
 # Subset to 48 hours
 tmp_peru_48 <- dat[dat$country=="peru" & dat$timestamp > max(ymd_hms(animals$timestamp_end))-48*60*60,]
 
+tmp_peru_48$name <- as.character(tmp_peru_48$name)
+
 # Remake shapefiles
 lfc <- do.call(st_sfc,
-              lapply(split(tmp_peru_48, tmp_peru_48$animalName),
+              lapply(split(tmp_peru_48, tmp_peru_48$name),
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-tmp_peru_48_shp <- st_sf(data.frame(animalName=levels(factor(tmp_peru_48[,"animalName"])), geom=lfc))
+tmp_peru_48_shp <- st_sf(data.frame(name=levels(factor(tmp_peru_48[,"name"])), geom=lfc))
 
 # add back in the metadata
 tmp_peru_48_shp  <- left_join(tmp_peru_48_shp,sp_dat)
 
 
 # First lets choose a category to colour
-tmp_peru_48[,"animalName"] <- factor(tmp_peru_48[,"animalName"])
-tmp_peru_48_shp$animalName <- factor(tmp_peru_48_shp$animalName)
+tmp_peru_48[,"name"] <- factor(tmp_peru_48[,"name"])
+tmp_peru_48_shp$name <- factor(tmp_peru_48_shp$name)
 
-col.cat <- turbo(length(levels(tmp_peru_48[,"animalName"])))
+col.cat <- turbo(length(levels(tmp_peru_48[,"name"])))
 # Add it to the dataframe
-tmp_peru_48$colours <- col.cat[tmp_peru_48[,"animalName"]]
-tmp_peru_48_shp$colours <- col.cat[tmp_peru_48_shp$animalName]
+tmp_peru_48$colours <- col.cat[tmp_peru_48[,"name"]]
+tmp_peru_48_shp$colours <- col.cat[tmp_peru_48_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_peru$animalName))` vultures transmitting data in Costa Rica:
+We currently have `r length(unique(tmp_peru$name))` vultures transmitting data in Costa Rica:
 
 ```{r, echo=F}
 # New map
-ids <- tmp_peru_48_shp$animalName
+ids <- tmp_peru_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
@@ -592,13 +596,13 @@ m <- leaflet() %>%
     {
       m <- m %>%
         addPolylines(data = tmp_peru_48_shp[i,], color = tmp_peru_48_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
-        addCircleMarkers(lng=tmp_peru_48$location_long[tmp_peru_48$animalName==ids[i]],
-                         lat=tmp_peru_48$location_lat[tmp_peru_48$animalName==ids[i]], 
-                         popup=paste(tmp_peru_48$timestamp[tmp_peru_48$animalName==ids[i]]),
+        addCircleMarkers(lng=tmp_peru_48$location_long[tmp_peru_48$name==ids[i]],
+                         lat=tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]], 
+                         popup=paste(tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]]),
                          fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_peru_48_shp$colours[i], group = ids[i], stroke=F) %>%
-        addCircleMarkers(lng=last(tmp_peru_48$location_long[tmp_peru_48$animalName==ids[i]]),
-                         lat=last(tmp_peru_48$location_lat[tmp_peru_48$animalName==ids[i]]), 
-                         popup=paste(last(tmp_peru_48$timestamp[tmp_peru_48$animalName==ids[i]])),
+        addCircleMarkers(lng=last(tmp_peru_48$location_long[tmp_peru_48$name==ids[i]]),
+                         lat=last(tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]]), 
+                         popup=paste(last(tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]])),
                          fillOpacity = 1, opacity = 1, radius=5, color = tmp_peru_48_shp$colours[i], group = ids[i], stroke=F)
     }
 
@@ -646,15 +650,15 @@ sub_dat <- sub_dat[sub_dat$timestamp>start_t2,]
 
 sub_dat$speed <- unlist(lapply(move::speed(sub_dat),c, NA ))
 sub_dat_df <- as.data.frame(sub_dat)
-sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "animalName")])
+sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "name")])
 
 
 
-sub_dat_df <- sub_dat_df[order(sub_dat_df$animalName),]
+sub_dat_df <- sub_dat_df[order(sub_dat_df$name),]
 lfc <- do.call(st_sfc,
-              lapply(split(sub_dat_df, sub_dat_df$animalName),
+              lapply(split(sub_dat_df, sub_dat_df$name),
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-dat_shp <- st_sf(data.frame(animalName=levels(factor(sub_dat_df[,"animalName"])), geom=lfc))
+dat_shp <- st_sf(data.frame(name=levels(factor(sub_dat_df[,"name"])), geom=lfc))
 
 #plot(st_geometry(dat_shp))
 
@@ -666,7 +670,7 @@ dat_shp <- st_sf(data.frame(animalName=levels(factor(sub_dat_df[,"animalName"]))
 dat_shp  <- left_join(dat_shp,sp_dat)
 
 # Bring in the colours from earlier
-cr_cols <- tmp_cr[, c("animalName", "colours")]
+cr_cols <- tmp_cr[, c("name", "colours")]
 cr_cols <- cr_cols[duplicated(cr_cols)==F,]
 dat_shp <- left_join(dat_shp, cr_cols)
 # Make shapefile of the tracks to add later
@@ -1121,7 +1125,7 @@ m <- leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
-        addPolylines(data = dat_shp, color = dat_shp$colours, weight=3,opacity=0.3, popup=dat_shp$animalName) %>% 
+        addPolylines(data = dat_shp, color = dat_shp$colours, weight=3,opacity=0.3, popup=dat_shp$name) %>% 
         addCircleMarkers(lng=clus_res$rest.mean.long,
                          lat=clus_res$rest.mean.lat, 
                          popup=paste("name"=clus_res$local.identifier, 
@@ -1140,16 +1144,16 @@ m <- leaflet() %>%
       )  %>% 
     addLegend(position="topright", labels=c("<24", "24-48", "48+"), colors=c("red","orange","blue"), title="Cluster age")
 
-ids <- unique(sub_dat_df$animalName)  
+ids <- unique(sub_dat_df$name)  
 
   for(i in 1:length(ids))      
         # The last point
-  m <-   m %>%   addMarkers(lng=last(sub_dat_df$location_long[sub_dat_df$animalName==ids[i]]),
-                         lat=last(sub_dat_df$location_lat[sub_dat_df$animalName==ids[i]]), 
-                         popup=paste(last(sub_dat_df$local_identifier[sub_dat_df$animalName==ids[i]]),
-                                     "<br>Time:",last(sub_dat_df$timestamp[sub_dat_df$animalName==ids[i]]),
-                                     "<br>Long:",last(sub_dat_df$location_long[sub_dat_df$animalName==ids[i]]),
-                                     "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$animalName==ids[i]])),
+  m <-   m %>%   addMarkers(lng=last(sub_dat_df$location_long[sub_dat_df$name==ids[i]]),
+                         lat=last(sub_dat_df$location_lat[sub_dat_df$name==ids[i]]), 
+                         popup=paste(last(sub_dat_df$local_identifier[sub_dat_df$name==ids[i]]),
+                                     "<br>Time:",last(sub_dat_df$timestamp[sub_dat_df$name==ids[i]]),
+                                     "<br>Long:",last(sub_dat_df$location_long[sub_dat_df$name==ids[i]]),
+                                     "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$name==ids[i]])),
                    icon = leafIcons)
   
   
@@ -1580,7 +1584,7 @@ m <- leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
-        addPolylines(data = dat_shp, color = dat_shp$colours, weight=3,opacity=0.3, popup=dat_shp$animalName) %>% 
+        addPolylines(data = dat_shp, color = dat_shp$colours, weight=3,opacity=0.3, popup=dat_shp$name) %>% 
         addCircleMarkers(lng=clus_summary_df$g_c_location_long,
                          lat=clus_summary_df$g_c_location_lat, 
                          popup=paste("name"=clus_summary_df$trackId, 
@@ -1656,33 +1660,33 @@ first_and_last <- as.data.frame(first_and_last)
 lfc <- do.call(st_sfc,
               lapply(split(first_and_last, first_and_last$name),
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-night_shp <- st_sf(data.frame(animalName=levels(factor(first_and_last[,"name"])), geom=lfc))
+night_shp <- st_sf(data.frame(name=levels(factor(first_and_last[,"name"])), geom=lfc))
 
 st_crs(night_shp) <- 4326
 
 # Add the colours
-cr_cols <- tmp_cr[, c("animalName", "colours")]
+cr_cols <- tmp_cr[, c("name", "colours")]
 cr_cols <- cr_cols[duplicated(cr_cols)==F,]
-cr_cols$animalName<- sub('\\_.*', '', cr_cols$animalName)
+cr_cols$name<- sub('\\_.*', '', cr_cols$name)
 
-cr_cols <- rbind(cr_cols, cr_cols[cr_cols$animalName=="Robin Hood",])
-cr_cols$animalName <- as.character(cr_cols$animalName)
-cr_cols$animalName[cr_cols$animalName=="Robin Hood"][1] <- "Robin.Hood"
+cr_cols <- rbind(cr_cols, cr_cols[cr_cols$name=="Robin Hood",])
+cr_cols$name <- as.character(cr_cols$name)
+cr_cols$name[cr_cols$name=="Robin Hood"][1] <- "Robin.Hood"
  
 night_shp <- left_join(night_shp, cr_cols)
 
-#night_dat_df <- left_join(night_dat_df, cr_cols, by=c("name"= "animalName"))
-first_and_last <- left_join(first_and_last, cr_cols, by=c("name"= "animalName"))
+#night_dat_df <- left_join(night_dat_df, cr_cols, by=c("name"= "name"))
+first_and_last <- left_join(first_and_last, cr_cols, by=c("name"= "name"))
 
 tmp <- first_and_last %>% group_by(name) %>%  dplyr::summarise(nights=n_distinct(night_id))
-night_shp <- left_join(night_shp, tmp, by=c("animalName"="name"))
+night_shp <- left_join(night_shp, tmp, by=c("name"="name"))
 
 night_shp$roost_spacing_km <- round(as.numeric((st_length(night_shp)/1000)/night_shp$nights),1)
 
 night_shp_df <- as.data.frame(night_shp)
 night_shp_df$geometry<- NULL
 
-night_shp_df <- night_shp_df[,c("animalName", "roost_spacing_km"),]
+night_shp_df <- night_shp_df[,c("name", "roost_spacing_km"),]
 night_shp_df <- night_shp_df[order(night_shp_df$roost_spacing_km),]
 
 # Determine colours
@@ -1690,7 +1694,7 @@ night_shp_df$col <- "white"
 night_shp_df$col[night_shp_df$roost_spacing_km<0.5] <- "#99d8c9"
 night_shp_df$col[night_shp_df$roost_spacing_km>0.5 & night_shp_df$roost_spacing_km<1 ] <- "#ffeda0"
 
-night_shp_df[,c("animalName", "roost_spacing_km")] %>%
+night_shp_df[,c("name", "roost_spacing_km")] %>%
   kbl(row.names = FALSE) %>%
   kable_styling()  %>% 
   column_spec(c(1,2), background = night_shp_df$col)
@@ -1706,7 +1710,7 @@ m <- leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
-        addPolylines(data = night_shp, color = night_shp$colours, weight=3,opacity=0.3, popup=night_shp$name, group=night_shp$animalName) %>% 
+        addPolylines(data = night_shp, color = night_shp$colours, weight=3,opacity=0.3, popup=night_shp$name, group=night_shp$name) %>% 
         addCircleMarkers(lng=first_and_last$location_long,
                          lat=first_and_last$location_lat, 
                          popup=paste("name"=first_and_last$name, "<br>Time = ", substr(first_and_last$timestamp,12,16), "Date = ",substr(first_and_last$timestamp,1,10),
@@ -1716,11 +1720,11 @@ m <- leaflet() %>%
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
         baseGroups = c("OS", "Simple", "Satellite"),
-        overlayGroups = night_shp$animalName,
+        overlayGroups = night_shp$name,
         options = layersControlOptions(collapsed = FALSE)
       )  #%>%
      #addLegend(position= "topright", colors=night_shp$colours, 
-      #          labels=night_shp$animalName ,opacity = 0.7, title = "Animals") 
+      #          labels=night_shp$name ,opacity = 0.7, title = "Animals") 
 
   
 m
@@ -1807,7 +1811,7 @@ Average battery level (last 14 days):
 ```{r, echo=F, warning=FALSE}
 cols<- c("#fc8d59", "#99d594")
 
-fig <- plot_ly(check_in_summary, x = ~animalName, y = ~mean_batt, type = 'bar',
+fig <- plot_ly(check_in_summary, x = ~name, y = ~mean_batt, type = 'bar',
 
         marker = list(color = cols[as.factor(check_in_summary$country)]),
         text=check_in_summary$country,
@@ -1829,7 +1833,7 @@ fig
 Average horizontal location accuracy (last 14 days):
 
 ```{r, echo=F, warning=F}
-fig <- plot_ly(check_in_summary, x = ~animalName, y = ~loc_accuracy, type = 'bar',
+fig <- plot_ly(check_in_summary, x = ~name, y = ~loc_accuracy, type = 'bar',
 
         marker = list(color = cols[as.factor(check_in_summary$country)]),
         text=check_in_summary$country,
@@ -1854,10 +1858,10 @@ Average number of locations per day (last 14 days):
 #colnames(check_in_summary)
 
 xform <- list(categoryorder = "array",
-              categoryarray = c(check_in_summary$animalName))
+              categoryarray = c(check_in_summary$name))
 
 
-fig <- plot_ly(check_in_summary, x = ~animalName, y = ~locs_per_day, type = 'bar',
+fig <- plot_ly(check_in_summary, x = ~name, y = ~locs_per_day, type = 'bar',
 
         marker = list(color = cols[as.factor(check_in_summary$country)]),
         text=check_in_summary$country,
@@ -1881,11 +1885,11 @@ The plot below shows a point each time we have a location at a given time.
 ```{r, echo=F}
 library(plotly)
 yform <- list(categoryorder = "array",
-              categoryarray = unique(tmp_cr$animalName))
+              categoryarray = unique(tmp_cr$name))
 
 
-fig <- plot_ly(x = tmp_cr$timestamp, y = tmp_cr$animalName,type="scatter",
-               height=1000, text=tmp_cr$animalName, hoverinfo='text',
+fig <- plot_ly(x = tmp_cr$timestamp, y = tmp_cr$name,type="scatter",
+               height=1000, text=tmp_cr$name, hoverinfo='text',
                mode   = 'markers',
                marker = list(size = 5,
                              color = 'rgba(50, 100, 255, .2)',
@@ -1903,11 +1907,11 @@ The plot below shows a point each time we have a location at a given time.
 ```{r, echo=F}
 library(plotly)
 yform <- list(categoryorder = "array",
-              categoryarray = unique(tmp_peru$animalName))
+              categoryarray = unique(tmp_peru$name))
 
 
-fig <- plot_ly(x = tmp_peru$timestamp, y = tmp_peru$animalName,type="scatter",
-               height=1000, text=tmp_peru$animalName, hoverinfo='text',
+fig <- plot_ly(x = tmp_peru$timestamp, y = tmp_peru$name,type="scatter",
+               height=1000, text=tmp_peru$name, hoverinfo='text',
                mode   = 'markers',
                marker = list(size = 5,
                              color = 'rgba(50, 100, 255, .2)',
