@@ -57,7 +57,14 @@ loginStored <- movebankLogin(username=MOVE_USE,
                              password=MOVE_PASS)
 
 # Get animals
+# Vultures
 animals <-getMovebankAnimals(study=1573471517,login=loginStored)
+# Ocelot
+tmp <-getMovebankAnimals(study=2526574641,login=loginStored)
+# Tapir
+tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
+animals <- rbind(animals, tmp,tmp2)
+
 # For some reason they are duplicated
 animals[duplicated(animals)==F,]
 # They vary by the field "sensor_type_id"
@@ -72,13 +79,22 @@ animals$name[animals$name=="Robin Hood"] <- "Robin.Hood"
 t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
 
-
+# Vultures
 mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
+#OCelot
+tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_t)
 
+#Tapir
+tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_t)
+
+mov_dat <- moveStack(mov_dat, tmp, tmp2)
 
 #Add the names
 mov_dat$name <- trackId(mov_dat)
+
 
 # Convert timezone
 mov_dat$timestamp <- with_tz(timestamps(mov_dat), tz="America/Costa_Rica")
@@ -100,18 +116,38 @@ dat$animalName <- sub('\\_.*', '', dat$animalName)
 # Add in the taxonomic group
 dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
 
+# # Setup the leaflet icon
+# leafIcons <- icons(
+#   iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small1.png",
+#   iconWidth = 38, iconHeight = 40,
+#   iconAnchorX = 22, iconAnchorY = 39,
+#   shadowUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small_shadow.png",
+#   shadowWidth = 38, shadowHeight = 30,
+#   shadowAnchorX = 4, shadowAnchorY = 39
+# )
+# #?iconList()
 
-# Setup the leaflet icon
-leafIcons <- icons(
-  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small1.png",
+papa <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/king_small.png",
   iconWidth = 38, iconHeight = 40,
   iconAnchorX = 22, iconAnchorY = 39,
   shadowUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small_shadow.png",
   shadowWidth = 38, shadowHeight = 30,
-  shadowAnchorX = 4, shadowAnchorY = 39
-)
-#?iconList()
+  shadowAnchorX = 4, shadowAnchorY = 39)
 
+aura <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/turk_small.png",
+  iconWidth = 38, iconHeight = 40,
+  iconAnchorX = 22, iconAnchorY = 39,
+  shadowUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small_shadow.png",
+  shadowWidth = 38, shadowHeight = 30,
+  shadowAnchorX = 4, shadowAnchorY = 39)
+
+iconSet <- iconList(aura= aura,
+                    papa =papa)
+
+dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
+unique(dat$icon)
 
 ```
 
@@ -208,7 +244,8 @@ tmp2 <- tmp2[order(tmp2$days_since_check_in),]
 
 tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
   kbl() %>%
-  kable_styling()
+  kable_styling() %>%
+  kableExtra::scroll_box(width = "100%")
 
 ```
 
@@ -268,7 +305,7 @@ We currently have `r length(unique(tmp_cr$name))` vultures transmitting data in 
 # New map
 ids <- tmp_cr_shp$name
 names <- sub('\\_.*', '', tmp_cr_shp$name)
-i <- 1
+i <- 5
 m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
@@ -294,7 +331,7 @@ m <- leaflet() %>%
                                      "<br>Time:",last(tmp_cr$timestamp[tmp_cr$name==ids[i]]),
                                      "<br>Long:",last(tmp_cr$location_long[tmp_cr$name==ids[i]]),
                                      "<br>Lat:",last(tmp_cr$location_lat[tmp_cr$name==ids[i]])),
-                   icon = leafIcons, group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
+                   icon = iconSet[tmp_cr$icon[tmp_cr$name==ids[i]][1]], group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
