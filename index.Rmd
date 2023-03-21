@@ -1,5 +1,5 @@
 ---
-title: "Osa Conservation: Tracker Checker"
+title: "Osa Conservation: Movement report"
 
 author:
   - Chris Beirne
@@ -11,9 +11,9 @@ biblio-style: apalike
 link-citations: yes
 ---
 
-# Tracker status checker
+# Device Status
 
-This document summarizes the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
+This document summarizes the movement locations for all active devices within Osa Conservation's movement ecology project. 
 
 ```{r c01, echo=F, message=F, include=F}
 library(rgdal) 
@@ -143,8 +143,29 @@ aura <- makeIcon(
   shadowWidth = 38, shadowHeight = 30,
   shadowAnchorX = 4, shadowAnchorY = 39)
 
+mela <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/yhv_small.png",
+  iconWidth = 38, iconHeight = 40,
+  iconAnchorX = 22, iconAnchorY = 39,
+  shadowUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small_shadow.png",
+  shadowWidth = 38, shadowHeight = 30,
+  shadowAnchorX = 4, shadowAnchorY = 39)
+
+pardalis <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/ocelot.png",
+  iconWidth = 38, iconHeight = 40,
+  iconAnchorX = 22, iconAnchorY = 39)
+
+bairdii <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/tapir.png",
+  iconWidth = 38, iconHeight = 40,
+  iconAnchorX = 22, iconAnchorY = 39)
+
 iconSet <- iconList(aura= aura,
-                    papa =papa)
+                    papa =papa,
+                    melambrotus = mela,
+                    pardalis = pardalis,
+                    bairdii = bairdii)
 
 dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
 unique(dat$icon)
@@ -299,7 +320,7 @@ tmp_cr_shp$colours <- col.cat[tmp_cr_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_cr$name))` vultures transmitting data in Costa Rica:
+We currently have `r length(unique(tmp_cr$name))` devices transmitting data in Costa Rica:
 
 ```{r, echo=F}
 # New map
@@ -404,7 +425,7 @@ tmp_peru_shp$colours <- col.cat[tmp_peru_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_peru$name))` vultures transmitting data in Peru:
+We currently have `r length(unique(tmp_peru$name))` devices transmitting data in Peru:
 
 ```{r, echo=F, eval=F}
 # Old map
@@ -459,9 +480,17 @@ m <- leaflet() %>%
         addCircleMarkers(lng=last(tmp_peru$location_long[tmp_peru$name==ids[i]]),
                          lat=last(tmp_peru$location_lat[tmp_peru$name==ids[i]]), 
                          popup=paste(last(tmp_peru$timestamp[tmp_peru$name==ids[i]])),
-                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_peru_shp$colours[i], group = ids[i], stroke=F)
+                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_peru_shp$colours[i], group = ids[i], stroke=F)  %>% 
+        # Add the last point
+        addMarkers(lng=last(tmp_peru$location_long[tmp_peru$name==ids[i]]),
+                         lat=last(tmp_peru$location_lat[tmp_peru$name==ids[i]]), 
+                         popup=paste(last(tmp_peru$local_identifier[tmp_peru$name==ids[i]]),
+                                     "<br>Time:",last(tmp_peru$timestamp[tmp_peru$name==ids[i]]),
+                                     "<br>Long:",last(tmp_peru$location_long[tmp_peru$name==ids[i]]),
+                                     "<br>Lat:",last(tmp_peru$location_lat[tmp_peru$name==ids[i]])),
+                   icon = iconSet[tmp_peru$icon[tmp_peru$name==ids[i]][1]], group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_peru_shp$colours[i], group = ids[i], stroke=F
     }
-
+    
   m <- m %>%
       addLegend(position= "topright", colors=tmp_peru_shp$colours, 
                 labels=ids ,opacity = 0.7, title = "Animals") %>%
@@ -502,7 +531,7 @@ fig
 
 # Last 48 Hours  {.tabset}
 
-The following maps relate to just the last 48 hours of data. Use this to find interesting clusters and their associated coordinates. 
+The following maps relate to just the last 48 hours of data. 
 
 ### Costa Rica
 
@@ -535,7 +564,7 @@ tmp_cr_48_shp$colours <- col.cat[tmp_cr_48_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_cr$name))` vultures transmitting data in Costa Rica:
+We currently have `r length(unique(tmp_cr$name))` devices transmitting data in Costa Rica:
 
 ```{r, echo=F}
 # New map
@@ -570,7 +599,7 @@ m <- leaflet() %>%
                                      "<br>Time:",last(tmp_cr_48$timestamp[tmp_cr_48$name==ids[i]]),
                                      "<br>Long:",last(tmp_cr_48$location_long[tmp_cr_48$name==ids[i]]),
                                      "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]])),
-                   icon = leafIcons, group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
+                   icon = iconSet[tmp_cr_48$icon[tmp_cr_48$name==ids[i]][1]], group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
     }
 
   m <- m %>%
@@ -617,7 +646,7 @@ tmp_peru_48_shp$colours <- col.cat[tmp_peru_48_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_peru$name))` vultures transmitting data in Costa Rica:
+We currently have `r length(unique(tmp_peru$name))` devices transmitting data in Peru:
 
 ```{r, echo=F}
 # New map
@@ -640,7 +669,16 @@ m <- leaflet() %>%
         addCircleMarkers(lng=last(tmp_peru_48$location_long[tmp_peru_48$name==ids[i]]),
                          lat=last(tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]]), 
                          popup=paste(last(tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]])),
-                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_peru_48_shp$colours[i], group = ids[i], stroke=F)
+                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_peru_48_shp$colours[i], group = ids[i], stroke=F) %>%
+        
+        # The last point
+        addMarkers(lng=last(tmp_peru_48$location_long[tmp_peru_48$name==ids[i]]),
+                         lat=last(tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]]), 
+                         popup=paste(last(tmp_peru_48$local_identifier[tmp_peru_48$name==ids[i]]),
+                                     "<br>Time:",last(tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]]),
+                                     "<br>Long:",last(tmp_peru_48$location_long[tmp_peru_48$name==ids[i]]),
+                                     "<br>Lat:",last(tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]])),
+                   icon = iconSet[tmp_peru_48$icon[tmp_peru_48$name==ids[i]][1]], group=ids[i])
     }
 
   m <- m %>%
@@ -659,15 +697,20 @@ m
 
 # Cluster detection
 
-The following map shows all of the clusters which have occurred in the previous 72 hours. This map should be checked daily to find potential feeding sites for visual confirmation. The field team should:
+The following map shows all of the vulture clusters which have occurred in the previous 72 hours. This map should be checked daily to find potential feeding sites for visual confirmation. The field team should:
 
 - Prioritize recent clusters - we are more likely to find a carcass if a vulture was feeding recently
+
 - Prioritize accessible clusters - not all of these clusters will be accessible, you should figure out which would be the easiest to visit
+
 - Prioritize clusters with multiple individuals - if more than one individual has visited a cluster, this could suggest a large feeding event
 
 Key:
+
 - Colored circles denote clusters of > than 1 hour duration, where the vultures have low distances travelled
+
 - The colors denote how recently the cluster started (Red >24 hours; orange 24-48 hours; blue 48-72 hours)
+
 - Hover over the circle for gps coordinates, cluster radius, number of points in the cluster and duration of the event
 
 ### Costa Rica
@@ -678,8 +721,8 @@ Key:
 #library('ggmap')
 
 
-# Subset to costa rica
-sub_dat <- mov_dat[mov_dat$location_lat>0,]
+# Subset to costa rica and vultures
+sub_dat <- mov_dat[mov_dat$location_lat>0 ,]
 
 # Just pull last 3 days
 start_t2 <- t-as.difftime(3,units='days')
@@ -687,11 +730,20 @@ sub_dat <- sub_dat[sub_dat$timestamp>start_t2,]
 
 sub_dat$speed <- unlist(lapply(move::speed(sub_dat),c, NA ))
 sub_dat_df <- as.data.frame(sub_dat)
-sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "name")])
+sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "name", "taxon_canonical_name")])
 
+# Subset to just vultures
+sub_dat_df <- sub_dat_df[sub_dat_df$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa"),]
 
 
 sub_dat_df <- sub_dat_df[order(sub_dat_df$name),]
+
+# Add in icon column
+sub_dat_df$icon <- sub(".*? ", "", sub_dat_df$taxon_canonical_name)
+
+
+
+
 lfc <- do.call(st_sfc,
               lapply(split(sub_dat_df, sub_dat_df$name),
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
@@ -1191,7 +1243,7 @@ ids <- unique(sub_dat_df$name)
                                      "<br>Time:",last(sub_dat_df$timestamp[sub_dat_df$name==ids[i]]),
                                      "<br>Long:",last(sub_dat_df$location_long[sub_dat_df$name==ids[i]]),
                                      "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$name==ids[i]])),
-                   icon = leafIcons)
+                   icon = iconSet[sub_dat_df$icon[sub_dat_df$name==ids[i]][1]], group=ids[i])
   
   
   m
@@ -1661,6 +1713,10 @@ If a birds night-time roost is does not change then the average roost spacing wi
 
 ```{r, eval=T, echo=F, warning=F, message=F}
 sub_dat <- mov_dat[mov_dat$location_lat>0,]
+# Remove the non-vultures
+sub_dat <- sub_dat[sub_dat$name %in% animals$name[animals$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Cathartes melambrotus" )],]
+
+
 # remove empty levels
 sub_dat$name <- factor(sub_dat$name)
 
@@ -1902,12 +1958,12 @@ fig <- plot_ly(check_in_summary, x = ~name, y = ~locs_per_day, type = 'bar',
 
         marker = list(color = cols[as.factor(check_in_summary$country)]),
         text=check_in_summary$country,
-        hoverinfo='text')
+        hoverinfo='y')
 
 fig <- fig %>% layout(title = "Locations per day",
                       xaxis = xform,
                       xaxis = list(title = ""),
-                      yaxis = list(title = ""))
+                      yaxis = list(title = "", hoverformat = '.1f'))
 
 
  
