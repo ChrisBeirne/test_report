@@ -1,4 +1,4 @@
-tracker-status-checker
+device-status
 last-48-hours
 costa-rica
 peru
