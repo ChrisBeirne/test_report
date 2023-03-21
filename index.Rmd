@@ -1,5 +1,5 @@
 ---
-title: "Osa Conservation: Movement ecology data audit"
+title: "Osa Conservation: Movement report"
 
 author:
   - Chris Beirne
@@ -13,7 +13,7 @@ link-citations: yes
 
 # Device Status
 
-This document summarizes the movement locations for all active devices within Osa Conservation's movement ecology project.  
+This document summarizes the movement locations for all active devices within Osa Conservation's movement ecology project. 
 
 ```{r c01, echo=F, message=F, include=F}
 library(rgdal) 
