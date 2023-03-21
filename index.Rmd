@@ -1278,7 +1278,8 @@ The following is a list of all of the clusters in the above map, ordered by age 
 
   tmp %>%
   kbl(row.names = FALSE) %>%
-  kable_styling() 
+  kable_styling()  %>%
+  kableExtra::scroll_box(width = "100%")
 
 ```
 
@@ -1790,7 +1791,8 @@ night_shp_df$col[night_shp_df$roost_spacing_km>0.5 & night_shp_df$roost_spacing_
 night_shp_df[,c("name", "roost_spacing_km")] %>%
   kbl(row.names = FALSE) %>%
   kable_styling()  %>% 
-  column_spec(c(1,2), background = night_shp_df$col)
+  column_spec(c(1,2), background = night_shp_df$col) %>%
+  kableExtra::scroll_box(width = "100%")
 
 ```
 
