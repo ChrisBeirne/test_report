@@ -75,6 +75,11 @@ animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ 
 animals$name <- sub('\\_.*', '', animals$animalName)
 animals$name[animals$name=="Robin Hood"] <- "Robin.Hood"
 
+# Sort date objects
+animals$timestamp_start <- ymd_hms(animals$timestamp_start)
+animals$timestamp_end <- ymd_hms(animals$timestamp_end)
+
+
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
@@ -168,7 +173,6 @@ iconSet <- iconList(aura= aura,
                     bairdii = bairdii)
 
 dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
-unique(dat$icon)
 
 ```
 
@@ -255,7 +259,7 @@ check_in_summary$locs_per_day <- check_in_summary$total_obs/as.numeric(check_in_
 
 ```{r  c05, echo=F}
 tmp2 <- animals[!(animals$name %in% tmp$name),]
-tmp2$timestamp_end <- with_tz(tmp2$timestamp_end, tzone = "America/Costa_Rica")
+tmp2$timestamp_end <- with_tz(substr(tmp2$timestamp_end,1,19), tzone = "America/Costa_Rica")
 #str(tmp2)
 tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, units="days")),1)
 tmp2 <- tmp2[order(tmp2$days_since_check_in),]
@@ -537,7 +541,7 @@ The following maps relate to just the last 48 hours of data.
 
 ```{r, echo=F, message=F, warning=F}
 # Subset to 48 hours
-tmp_cr_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(ymd_hms(animals$timestamp_end))-48*60*60,]
+tmp_cr_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(animals$timestamp_end, na.rm=T)-48*60*60,]
 tmp_cr_48$name <- as.character(tmp_cr_48$name)
 
 # Remake shapefiles
@@ -621,7 +625,7 @@ m
 
 ```{r, echo=F, message=F, warning=F}
 # Subset to 48 hours
-tmp_peru_48 <- dat[dat$country=="peru" & dat$timestamp > max(ymd_hms(animals$timestamp_end))-48*60*60,]
+tmp_peru_48 <- dat[dat$country=="peru" & dat$timestamp > max(ymd_hms(animals$timestamp_end),na.rm=T)-48*60*60,]
 
 tmp_peru_48$name <- as.character(tmp_peru_48$name)
 
