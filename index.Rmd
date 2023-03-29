@@ -73,12 +73,10 @@ animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==
 # Clean up the name
 animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ .*', '', animals$taxon_canonical_name))
 animals$name <- sub('\\_.*', '', animals$animalName)
-animals$name[animals$name=="Robin Hood"] <- "Robin.Hood"
 
 # Sort date objects
 animals$timestamp_start <- ymd_hms(animals$timestamp_start)
 animals$timestamp_end <- ymd_hms(animals$timestamp_end)
-
 
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
