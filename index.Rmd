@@ -1766,10 +1766,8 @@ cr_cols <- tmp_cr[, c("name", "colours")]
 cr_cols <- cr_cols[duplicated(cr_cols)==F,]
 cr_cols$name<- sub('\\_.*', '', cr_cols$name)
 
-cr_cols <- rbind(cr_cols, cr_cols[cr_cols$name=="Robin Hood",])
 cr_cols$name <- as.character(cr_cols$name)
-cr_cols$name[cr_cols$name=="Robin Hood"][1] <- "Robin.Hood"
- 
+
 night_shp <- left_join(night_shp, cr_cols)
 
 #night_dat_df <- left_join(night_dat_df, cr_cols, by=c("name"= "name"))
