@@ -1,14 +1,14 @@
 ---
 title: "Osa Conservation: Movement report"
-
 author:
   - Chris Beirne
-
 site: bookdown::test-bookdown
 output: bookdown::gitbook
 documentclass: book
 biblio-style: apalike
 link-citations: yes
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Device Status
@@ -33,6 +33,7 @@ library(readxl)
 library(geosphere)
 library(foreach)
 library(maptools)
+library(leaflet.opacity)
 
 options(googledrive_quiet = TRUE)
 
@@ -1895,6 +1896,154 @@ m
 #   
 
 ```
+
+# Heat maps
+
+The following maps are heat maps of all of the data we have for certain individuals. Note, we do not do this for every individual as it would mean using a lot of bandwidth each time the report updates.
+
+### Juancito
+
+```{r}
+#Tapir
+tmp <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE)
+
+# Remove outliers
+#plot(tmp)
+tmp<- tmp[tmp$location_lat<8.75,]
+
+# Transform to UTM
+data2 <- spTransform(tmp, CRSobj="+proj=utm +zone=17 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs")
+#plot(data2)
+
+# Run brownian bridge
+dbbmm <- brownian.bridge.dyn(object=data2, location.error=50, dimSize=500, ext=1,
+time.step=2, margin=15)
+
+# Check
+#plot(dbbmm)
+
+# Reproject for leaflet
+test <- projectRaster(dbbmm, crs=crs("+proj=longlat +datum=WGS84 +no_defs"))
+plot(test)
+# Filter out low probability locations
+test[test<0.0001] <- NA
+#plot(test)
+
+# Make the numbers bigger for the leaflet legend to show (may not be required for other datasets)
+test <- test*100
+
+# Make the palette
+tmp_pal <- c("#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2")
+
+
+pal <- colorNumeric(rev(tmp_pal), values(test),
+  na.color = "transparent")
+
+# Create shapefiles
+tmp_df <- as.data.frame(tmp)
+
+# Costa rica
+lfc <- do.call(st_sfc,
+              lapply(split(tmp_df, tmp_df$local_identifier),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+tmp_shp <- st_sf(data.frame(name=levels(factor(tmp_df[,"local_identifier"])), geom=lfc))
+
+
+leaflet() %>%
+  addProviderTiles("OpenStreetMap", group="OSM (default)") %>%
+  addProviderTiles("Esri.WorldImagery", group="Satellite") %>%
+  addRasterImage(test, group="Raster", colors = pal, layerId="Raster") %>% 
+  addPolylines(data=tmp_shp, color = "black",
+               label = tmp_shp$NAME, group="Track",  weight=2, opacity = 0.3) %>%
+   
+    addOpacitySlider(layerId = "Raster") %>%
+  
+  addLayersControl(
+    baseGroups = c("OSM (default)", "Satellite"),
+    overlayGroups = c("Raster", "Track")) %>%
+  addLegend(pal = pal, values = values(test),
+    title = "Time")      #%>%
+  #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
+   #            label = tmp_lcp$ID)# %>% 
+  #addCircleMarkers(data=tmp_end, col="black", radius=1)
+
+
+```
+
+
+
+### Pardo
+
+```{r}
+# Create heatmaps using lifetime tracks
+
+#OCelot
+tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
+
+# Remove outliers
+#plot(tmp)
+tmp<- tmp[tmp$location_lat<8.75,]
+
+# Transform to UTM
+data2 <- spTransform(tmp, CRSobj="+proj=utm +zone=17 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs")
+#plot(data2)
+
+# Run brownian bridge
+dbbmm <- brownian.bridge.dyn(object=data2, location.error=50, dimSize=500, ext=1,
+time.step=2, margin=15)
+
+# Check
+#plot(dbbmm)
+
+# Reproject for leaflet
+test <- projectRaster(dbbmm, crs=crs("+proj=longlat +datum=WGS84 +no_defs"))
+
+# Filter out low probability locations
+test[test<0.00003] <- NA
+#plot(test)
+
+# Make the numbers bigger for the leaflet legend to show (may not be required for other datasets)
+test <- test*100
+
+# Make the palette
+tmp_pal <- c("#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2")
+
+
+pal <- colorNumeric(rev(tmp_pal), values(test),
+  na.color = "transparent")
+
+# Create shapefiles
+tmp_df <- as.data.frame(tmp)
+
+# Costa rica
+lfc <- do.call(st_sfc,
+              lapply(split(tmp_df, tmp_df$local_identifier),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+tmp_shp <- st_sf(data.frame(name=levels(factor(tmp_df[,"local_identifier"])), geom=lfc))
+
+
+leaflet() %>%
+  addProviderTiles("OpenStreetMap", group="OSM (default)") %>%
+  addProviderTiles("Esri.WorldImagery", group="Satellite") %>%
+  addRasterImage(test, group="Raster", colors = pal, layerId="Raster") %>% 
+  addPolylines(data=tmp_shp, color = "black",
+               label = tmp_shp$NAME, group="Track",  weight=2, opacity = 0.3) %>%
+   
+    addOpacitySlider(layerId = "Raster") %>%
+  
+  addLayersControl(
+    baseGroups = c("OSM (default)", "Satellite"),
+    overlayGroups = c("Raster", "Track")) %>%
+  addLegend(pal = pal, values = values(test),
+    title = "Time")      #%>%
+  #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
+   #            label = tmp_lcp$ID)# %>% 
+  #addCircleMarkers(data=tmp_end, col="black", radius=1)
+
+
+```
+
+
 
 
 # Hardware function and settings
