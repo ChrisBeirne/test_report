@@ -6,6 +6,9 @@ cluster-detection
 costa-rica-1
 roost-and-nest-sites
 nighttime-roost-movement-summary
+heat-maps
+juancito
+pardo
 hardware-function-and-settings
 battery-status
 location-accuracy
