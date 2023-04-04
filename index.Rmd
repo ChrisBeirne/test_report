@@ -16,6 +16,8 @@ editor_options:
 This document summarizes the movement locations for all active devices within Osa Conservation's movement ecology project. 
 
 ```{r c01, echo=F, message=F, include=F}
+knitr::opts_chunk$set(echo = FALSE, message=F, warning=F)
+
 library(rgdal) 
 library(move)
 library(dplyr)
@@ -1924,7 +1926,7 @@ time.step=2, margin=15)
 
 # Reproject for leaflet
 test <- projectRaster(dbbmm, crs=crs("+proj=longlat +datum=WGS84 +no_defs"))
-plot(test)
+#plot(test)
 # Filter out low probability locations
 test[test<0.0001] <- NA
 #plot(test)
@@ -1954,13 +1956,14 @@ leaflet() %>%
   addProviderTiles("Esri.WorldImagery", group="Satellite") %>%
   addRasterImage(test, group="Raster", colors = pal, layerId="Raster") %>% 
   addPolylines(data=tmp_shp, color = "black",
-               label = tmp_shp$NAME, group="Track",  weight=2, opacity = 0.3) %>%
+               label = tmp_shp$NAME, group="Track",  weight=1, opacity = 0.3) %>%
    
-    addOpacitySlider(layerId = "Raster") %>%
+   # addOpacitySlider(layerId = "Raster") %>%
   
   addLayersControl(
     baseGroups = c("OSM (default)", "Satellite"),
-    overlayGroups = c("Raster", "Track")) %>%
+    overlayGroups = c("Raster", "Track"),
+    options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
     title = "Time")      #%>%
   #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
@@ -2025,22 +2028,22 @@ tmp_shp <- st_sf(data.frame(name=levels(factor(tmp_df[,"local_identifier"])), ge
 leaflet() %>%
   addProviderTiles("OpenStreetMap", group="OSM (default)") %>%
   addProviderTiles("Esri.WorldImagery", group="Satellite") %>%
-  addRasterImage(test, group="Raster", colors = pal, layerId="Raster") %>% 
   addPolylines(data=tmp_shp, color = "black",
-               label = tmp_shp$NAME, group="Track",  weight=2, opacity = 0.3) %>%
+               label = tmp_shp$NAME, group="Track",  weight=1, opacity = 0.3) %>%
+  addRasterImage(test, group="Raster", colors = pal, layerId="Raster") %>% 
+
    
-    addOpacitySlider(layerId = "Raster") %>%
+   # addOpacitySlider(layerId = "Raster") %>%
   
   addLayersControl(
     baseGroups = c("OSM (default)", "Satellite"),
-    overlayGroups = c("Raster", "Track")) %>%
+    overlayGroups = c( "Track","Raster"),
+    options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
-    title = "Time")      #%>%
-  #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
-   #            label = tmp_lcp$ID)# %>% 
-  #addCircleMarkers(data=tmp_end, col="black", radius=1)
+    title = "Time")      
 
 
+?addLayersControl
 ```
 
 
