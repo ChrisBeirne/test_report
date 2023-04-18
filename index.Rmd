@@ -553,7 +553,7 @@ tmp_cr_48 <- rbind(tmp_48, tmp_cr_48)
 
 
 tmp_cr_48$name <- as.character(tmp_cr_48$name)
-table(dat$taxon_canonical_name)
+#table(dat$taxon_canonical_name)
 # Remake shapefiles
 lfc <- do.call(st_sfc,
               lapply(split(tmp_cr_48, tmp_cr_48$name),
