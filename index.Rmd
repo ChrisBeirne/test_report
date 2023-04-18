@@ -378,8 +378,7 @@ m <- leaflet() %>%
 m 
 ```
 
-Daily schedule of the tags
-
+Daily schedule of the tags:
 ```{r, echo=F, warning=F, message=F}
 
 xform <- list(categoryorder = "array",
@@ -462,7 +461,8 @@ m <- leaflet() %>%
   addLayersControl(
     baseGroups = c("OS", "Simple", "Satellite"),
     options = layersControlOptions(collapsed = FALSE)
-  )
+  ) %>%
+  addFullscreenControl()
 m
 ```
 
@@ -509,7 +509,8 @@ m <- leaflet() %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 ```
@@ -628,7 +629,8 @@ m <- leaflet() %>%
         baseGroups = c("Simple", "OS", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 ```
@@ -1260,7 +1262,8 @@ ids <- unique(sub_dat_df$name)
                                      "<br>Time:",last(sub_dat_df$timestamp[sub_dat_df$name==ids[i]]),
                                      "<br>Long:",last(sub_dat_df$location_long[sub_dat_df$name==ids[i]]),
                                      "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$name==ids[i]])),
-                   icon = iconSet[sub_dat_df$icon[sub_dat_df$name==ids[i]][1]], group=ids[i])
+                   icon = iconSet[sub_dat_df$icon[sub_dat_df$name==ids[i]][1]], group=ids[i])%>%
+  addFullscreenControl()
   
   
   m
@@ -1707,7 +1710,8 @@ m <- leaflet() %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         options = layersControlOptions(collapsed = FALSE)
       )  %>% 
-    addLegend(position="topright", labels=c("<24", "24-48", "48+"), colors=c("red","orange","blue"), title="Cluster age")
+    addLegend(position="topright", labels=c("<24", "24-48", "48+"), colors=c("red","orange","blue"), title="Cluster age")%>%
+  addFullscreenControl()
 
 m
 
@@ -1832,7 +1836,8 @@ m <- leaflet() %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         overlayGroups = night_shp$name,
         options = layersControlOptions(collapsed = FALSE)
-      )  #%>%
+      )%>%
+  addFullscreenControl()  #%>%
      #addLegend(position= "topright", colors=night_shp$colours, 
       #          labels=night_shp$name ,opacity = 0.7, title = "Animals") 
 
@@ -1978,7 +1983,8 @@ leaflet() %>%
     overlayGroups = c("Raster", "Track"),
     options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
-    title = "Time")      #%>%
+    title = "Time") %>%
+  addFullscreenControl()     #%>%
   #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
    #            label = tmp_lcp$ID)# %>% 
   #addCircleMarkers(data=tmp_end, col="black", radius=1)
@@ -1986,7 +1992,7 @@ leaflet() %>%
 
 ```
 
-### Tuvo
+### Tuva
 
 ```{r}
 #Tapir
@@ -2001,7 +2007,7 @@ data2 <- spTransform(tmp, CRSobj="+proj=utm +zone=17 +ellps=GRS80 +towgs84=0,0,0
 #plot(data2)
 
 # Run brownian bridge
-dbbmm <- brownian.bridge.dyn(object=data2, location.error=50, dimSize=500, ext=1,
+dbbmm <- brownian.bridge.dyn(object=data2, location.error=50, dimSize=500, ext=2,
 time.step=2, margin=5, window.size=13)
 # Change margin and window size when you have more data
 
@@ -2049,7 +2055,8 @@ leaflet() %>%
     overlayGroups = c("Raster", "Track"),
     options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
-    title = "Time")      #%>%
+    title = "Time")  %>%
+  addFullscreenControl()    #%>%
   #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
    #            label = tmp_lcp$ID)# %>% 
   #addCircleMarkers(data=tmp_end, col="black", radius=1)
@@ -2124,7 +2131,8 @@ leaflet() %>%
     overlayGroups = c( "Track","Raster"),
     options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
-    title = "Time")      
+    title = "Time")   %>%
+  addFullscreenControl()   
 
 
 ?addLayersControl
@@ -2239,7 +2247,8 @@ addPolylines(data = con_sf_ln, color = c("blue"), weight=2,opacity=0.3) %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 
@@ -2344,6 +2353,59 @@ fig <- plot_ly(x = tmp_cr$timestamp, y = tmp_cr$name,type="scatter",
 fig
 
 ```
+
+By the hour:
+
+```{r}
+tmp <- dat[dat$local_identifier=="Wilson",]
+tmp$hour <- ymd_h(substr(tmp$timestamp, 1,13))
+tmp2 <- tmp %>% group_by(hour) %>% summarise(n())
+plot(tmp2$`n()`~ tmp2$hour)
+
+dat$hour <- ymd_h(substr(dat$timestamp, 1,13))
+tmp <- dat %>% group_by(local_identifier, hour) %>% summarise(freq=n())
+
+col.cat <- turbo(length(unique(dat[,"local_identifier"])))
+
+
+cols <- col.cat[1:length(unique(dat$local_identifier))]
+
+
+
+fig <- plot_ly(tmp, x = ~hour, y = ~freq, name = tmp$local_identifier, type = 'scatter', mode = 'lines',split = ~local_identifier,color=~local_identifier, colors=cols) 
+
+fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
+                      xaxis = xform,
+                      xaxis = list(title = ""),
+                      yaxis = list(title = "Locations per hour"))
+
+fig
+
+#individual plots
+
+# i <- 33
+# for(i in 1:length(unique(dat$local_identifier)))
+# {
+#   tmp2 <- tmp[tmp$local_identifier==unique(dat$local_identifier)[i],]
+# 
+# fig <- plot_ly(tmp2, x = ~hour, y = ~freq, name = tmp2$local_identifier, type = 'scatter', mode = 'lines',split = ~local_identifier,color=~local_identifier, colors=cols,
+#                text=paste(tmp2$local_identifier, tmp2$hour), hoverinfo='text') 
+# 
+# fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
+#                       xaxis = xform,
+#                       xaxis = list(title = ""),
+#                       yaxis = list(title = "Locations per hour"))
+# 
+# fig
+# }
+
+
+
+
+```
+
+
+
 
 *Location activity over the last 14 days*
 
