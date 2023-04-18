@@ -462,7 +462,8 @@ m <- leaflet() %>%
   addLayersControl(
     baseGroups = c("OS", "Simple", "Satellite"),
     options = layersControlOptions(collapsed = FALSE)
-  )
+  ) %>%
+  addFullscreenControl()
 m
 ```
 
@@ -509,7 +510,8 @@ m <- leaflet() %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 ```
@@ -628,7 +630,8 @@ m <- leaflet() %>%
         baseGroups = c("Simple", "OS", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 ```
@@ -1260,7 +1263,8 @@ ids <- unique(sub_dat_df$name)
                                      "<br>Time:",last(sub_dat_df$timestamp[sub_dat_df$name==ids[i]]),
                                      "<br>Long:",last(sub_dat_df$location_long[sub_dat_df$name==ids[i]]),
                                      "<br>Lat:",last(sub_dat_df$location_lat[sub_dat_df$name==ids[i]])),
-                   icon = iconSet[sub_dat_df$icon[sub_dat_df$name==ids[i]][1]], group=ids[i])
+                   icon = iconSet[sub_dat_df$icon[sub_dat_df$name==ids[i]][1]], group=ids[i])%>%
+  addFullscreenControl()
   
   
   m
@@ -1707,7 +1711,8 @@ m <- leaflet() %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         options = layersControlOptions(collapsed = FALSE)
       )  %>% 
-    addLegend(position="topright", labels=c("<24", "24-48", "48+"), colors=c("red","orange","blue"), title="Cluster age")
+    addLegend(position="topright", labels=c("<24", "24-48", "48+"), colors=c("red","orange","blue"), title="Cluster age")%>%
+  addFullscreenControl()
 
 m
 
@@ -1832,7 +1837,8 @@ m <- leaflet() %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         overlayGroups = night_shp$name,
         options = layersControlOptions(collapsed = FALSE)
-      )  #%>%
+      )%>%
+  addFullscreenControl()  #%>%
      #addLegend(position= "topright", colors=night_shp$colours, 
       #          labels=night_shp$name ,opacity = 0.7, title = "Animals") 
 
@@ -1978,7 +1984,8 @@ leaflet() %>%
     overlayGroups = c("Raster", "Track"),
     options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
-    title = "Time")      #%>%
+    title = "Time") %>%
+  addFullscreenControl()     #%>%
   #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
    #            label = tmp_lcp$ID)# %>% 
   #addCircleMarkers(data=tmp_end, col="black", radius=1)
@@ -2049,7 +2056,8 @@ leaflet() %>%
     overlayGroups = c("Raster", "Track"),
     options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
-    title = "Time")      #%>%
+    title = "Time")  %>%
+  addFullscreenControl()    #%>%
   #addPolylines(data=tmp_lcp, weight = 2, fillColor = "blue",
    #            label = tmp_lcp$ID)# %>% 
   #addCircleMarkers(data=tmp_end, col="black", radius=1)
@@ -2124,7 +2132,8 @@ leaflet() %>%
     overlayGroups = c( "Track","Raster"),
     options = layersControlOptions(collapsed = FALSE)) %>%
   addLegend(pal = pal, values = values(test),
-    title = "Time")      
+    title = "Time")   %>%
+  addFullscreenControl()   
 
 
 ?addLayersControl
@@ -2239,7 +2248,8 @@ addPolylines(data = con_sf_ln, color = c("blue"), weight=2,opacity=0.3) %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 
