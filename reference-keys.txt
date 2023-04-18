@@ -1,5 +1,5 @@
 device-status
-last-48-hours
+last-locations
 costa-rica
 peru
 cluster-detection
@@ -8,7 +8,9 @@ roost-and-nest-sites
 nighttime-roost-movement-summary
 heat-maps
 juancito
+tuvo
 pardo
+interactions
 hardware-function-and-settings
 battery-status
 location-accuracy
