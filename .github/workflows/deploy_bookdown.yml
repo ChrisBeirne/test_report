@@ -59,6 +59,8 @@ jobs:
         run: Rscript -e "install.packages('maptools')"
       - name: Install leaflet.opacity
         run: Rscript -e "install.packages('leaflet.opacity')"
+      - name: Install leaflet.opacity
+        run: Rscript -e "install.packages('leaflet.extras')"
       - name: Render Book
         env: 
           GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}

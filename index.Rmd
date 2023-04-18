@@ -36,6 +36,7 @@ library(geosphere)
 library(foreach)
 library(maptools)
 library(leaflet.opacity)
+library(leaflet.extras)
 
 options(googledrive_quiet = TRUE)
 
@@ -329,6 +330,7 @@ tmp_cr_shp$colours <- col.cat[tmp_cr_shp$name]
 We currently have `r length(unique(tmp_cr$name))` devices transmitting data in Costa Rica:
 
 ```{r, echo=F}
+
 # New map
 ids <- tmp_cr_shp$name
 names <- sub('\\_.*', '', tmp_cr_shp$name)
@@ -370,7 +372,8 @@ m <- leaflet() %>%
         baseGroups = c("OS", "Simple", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 ```
