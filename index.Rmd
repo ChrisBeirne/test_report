@@ -2357,13 +2357,13 @@ fig
 By the hour:
 
 ```{r}
-tmp <- dat[dat$local_identifier=="Wilson",]
-tmp$hour <- ymd_h(substr(tmp$timestamp, 1,13))
-tmp2 <- tmp %>% group_by(hour) %>% summarise(n())
-plot(tmp2$`n()`~ tmp2$hour)
-
 dat$hour <- ymd_h(substr(dat$timestamp, 1,13))
 tmp <- dat %>% group_by(local_identifier, hour) %>% summarise(freq=n())
+
+# Subset to just last 14
+tmp <- tmp[tmp$hour>start_t,]
+
+
 
 col.cat <- turbo(length(unique(dat[,"local_identifier"])))
 
