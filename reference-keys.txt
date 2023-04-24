@@ -8,7 +8,7 @@ roost-and-nest-sites
 nighttime-roost-movement-summary
 heat-maps
 juancito
-tuvo
+tuva
 pardo
 interactions
 hardware-function-and-settings
