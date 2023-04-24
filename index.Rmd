@@ -1292,8 +1292,8 @@ The following is a list of all of the clusters in the above map, ordered by age 
 
 ```{r, echo=F, warning=F, message=F}
  tmp <- clus_res[,c("local.identifier","timestamp.first", "rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
- tmp <- tmp[order(tmp$timestamp.first),]
- colnames(tmp) <- c("name", "start_time", "long", "lat", "npos", "duration", "code")
+ tmp <- tmp[order(tmp$timestamp.first, decreasing=T),]
+  colnames(tmp) <- c("name", "start_time", "long", "lat", "npos", "duration", "code")
  tmp$duration <- round(tmp$duration,1)
 
   tmp %>%
