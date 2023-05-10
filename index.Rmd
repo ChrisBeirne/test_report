@@ -98,7 +98,12 @@ tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTim
 tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_tapir)
 
+# Remove the obvious outlier
+tmp2 <- tmp2[tmp2$location_lat>8,]
+
 mov_dat <- moveStack(mov_dat, tmp, tmp2)
+
+
 
 #Add the names
 mov_dat$name <- trackId(mov_dat)
