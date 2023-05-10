@@ -177,6 +177,16 @@ iconSet <- iconList(aura= aura,
 
 dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
 
+
+# Add costa rica survey locations
+cr_locs<- data.frame(location_code=c("AIRS02", "CERR02","LOMAS01"), 	
+           latitude=c(8.402595,	8.416142,8.758321)	,
+           longitude=c( -83.35852,	-83.31793,	-83.29787) )
+
+
+
+
+
 ```
 
 *Last data request: `r now(tzone = "America/Costa_Rica")`*
@@ -364,6 +374,10 @@ m <- leaflet() %>%
     }
 
   m <- m %>%
+      # Add survey location
+      addMarkers(lng=cr_locs$longitude,
+                         lat=cr_locs$latitude, 
+                         popup=cr_locs$location_code) %>% 
       #addLegend(position= "topright", colors=tmp_cr_shp$colours, 
        #         labels=names ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
@@ -621,6 +635,10 @@ m <- leaflet() %>%
     }
 
   m <- m %>%
+      # Add survey location
+      addMarkers(lng=cr_locs$longitude,
+                         lat=cr_locs$latitude, 
+                         popup=cr_locs$location_code) %>% 
       #addLegend(position= "topright", colors=tmp_cr_48_shp$colours, 
       #          labels=ids ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
