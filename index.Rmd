@@ -2000,14 +2000,15 @@ tmp <- tmp_tapir[["Tuva"]]
   
 # Remove outliers
 #plot(tmp)
-tmp<- tmp[tmp$location_lat<8.75,]
-
+tmp<- tmp[tmp$location_lat<8.50,]
+tmp<- tmp[tmp$location_lat>8,]
+plot(tmp)
 # Transform to UTM
 data2 <- spTransform(tmp, CRSobj="+proj=utm +zone=17 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs")
 #plot(data2)
 
 # Run brownian bridge
-dbbmm <- brownian.bridge.dyn(object=data2, location.error=50, dimSize=500, ext=2,
+dbbmm <- brownian.bridge.dyn(object=data2, location.error=50, dimSize=500, ext=1,
 time.step=2, margin=5, window.size=13)
 # Change margin and window size when you have more data
 
