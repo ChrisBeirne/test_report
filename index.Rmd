@@ -19,7 +19,7 @@ This document summarizes the movement locations for all active devices within Os
 knitr::opts_chunk$set(echo = FALSE, message=F, warning=F)
 
 #library(rgdal) 
-library(move)
+library(move) 
 library(dplyr)
 library(leaflet)
 library(units)
