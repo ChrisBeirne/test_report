@@ -1942,9 +1942,12 @@ m
 
 The following maps are heat maps of all of the data we have for certain individuals. Note, we do not do this for every individual as it would mean using a lot of bandwidth each time the report updates.
 
+CURRENTING FAILING -> UPDATING TO MOVE2
+
+
 ### Juancito
 
-```{r}
+```{r, eval=F}
 #Tapir
 
 tmp_tapir <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE)
@@ -2017,7 +2020,7 @@ leaflet() %>%
 
 ### Tuva
 
-```{r}
+```{r, eval=F}
 #Tapir
 tmp <- tmp_tapir[["Tuva"]]
   
@@ -2092,7 +2095,7 @@ leaflet() %>%
 
 ### Pardo
 
-```{r}
+```{r, eval=F}
 # Create heatmaps using lifetime tracks
 
 #OCelot
