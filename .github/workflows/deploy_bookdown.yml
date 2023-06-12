@@ -23,8 +23,8 @@ jobs:
           TINYTEX_INSTALLER: TinyTeX
       - name: Install rmarkdown
         run: Rscript -e 'install.packages(c("rmarkdown","bookdown"))'
-      - name: Install rgdal
-        run: Rscript -e "install.packages('rgdal', type='mac.binary')"  
+#      - name: Install rgdal
+#        run: Rscript -e "install.packages('rgdal', type='mac.binary')"  
       - name: Install units
         run: Rscript -e "install.packages('units')"
       - name: Install leaflet
