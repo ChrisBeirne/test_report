@@ -164,6 +164,16 @@ mela <- makeIcon(
   shadowWidth = 38, shadowHeight = 30,
   shadowAnchorX = 4, shadowAnchorY = 39)
 
+
+atra <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/bhv_small.png",
+  iconWidth = 38, iconHeight = 40,
+  iconAnchorX = 22, iconAnchorY = 39,
+  shadowUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/vul_small_shadow.png",
+  shadowWidth = 38, shadowHeight = 30,
+  shadowAnchorX = 4, shadowAnchorY = 39)
+
+
 pardalis <- makeIcon(
   iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/ocelot.png",
   iconWidth = 38, iconHeight = 40,
@@ -177,11 +187,11 @@ bairdii <- makeIcon(
 iconSet <- iconList(aura= aura,
                     papa =papa,
                     melambrotus = mela,
+                    atratus = atra,
                     pardalis = pardalis,
                     bairdii = bairdii)
 
 dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
-
 
 # Add costa rica survey locations
 cr_locs<- data.frame(location_code=c("AIRS02", "CERR02","LOMAS01"), 	
@@ -349,13 +359,13 @@ We currently have `r length(unique(tmp_cr$name))` devices transmitting data in C
 # New map
 ids <- tmp_cr_shp$name
 names <- sub('\\_.*', '', tmp_cr_shp$name)
-i <- 5
+i <- 24
 m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
-
+plot(tmp_cr_shp[i,])
   for (i in seq(along=ids))
     {
       m <- m %>%
