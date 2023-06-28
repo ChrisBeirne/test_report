@@ -785,7 +785,7 @@ sub_dat_df <- as.data.frame(sub_dat)
 sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "name", "taxon_canonical_name")])
 
 # Subset to just vultures
-sub_dat_df <- sub_dat_df[sub_dat_df$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa"),]
+sub_dat_df <- sub_dat_df[sub_dat_df$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Coragyps atratus", "Cathartes melambrotus"),]
 
 
 sub_dat_df <- sub_dat_df[order(sub_dat_df$name),]
