@@ -1343,7 +1343,8 @@ The following is a list of all of the clusters in the above map, ordered by age 
   tmp %>%
   kbl(row.names = FALSE) %>%
   kable_styling()  %>%
-  kableExtra::scroll_box(width = "100%")
+  kableExtra::scroll_box(width = "100%")%>%
+  kable_styling(font_size = 10.5)
 
 ```
 
