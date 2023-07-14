@@ -279,7 +279,7 @@ tmp_sum <- dat %>% group_by(name) %>% dplyr::summarise(total_obs=n(), mean_batt=
 #colnames(dat)
 
 check_in_summary <- left_join(check_in_summary, tmp_sum)
-check_in_summary$locs_per_day <- check_in_summary$total_obs/as.numeric(check_in_summary$duration)
+check_in_summary$locs_per_hour <- check_in_summary$total_obs/as.numeric(check_in_summary$duration)
 
 ```
 
@@ -365,7 +365,7 @@ m <- leaflet() %>%
   addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
-plot(tmp_cr_shp[i,])
+
   for (i in seq(along=ids))
     {
       m <- m %>%
@@ -1214,12 +1214,19 @@ radius=100
 #
 clus_res <- prop.rest.df
 
+# Change cluster colours, instead of using t -> Current time. Use last movmeent location.
+
+
+
+
 # Add a colour colum
-clus_age <- t-ymd_hms(clus_res$timestamp.last)
+clus_res$clus_age <- round(as.numeric(difftime(max(sub_dat$timestamp),ymd_hms(clus_res$timestamp.last), units="hours")),1)
 clus_res$col <- NA
-clus_res$col[clus_age<24] <- "red"
-clus_res$col[clus_age>24 & clus_age<48] <- "orange"
-clus_res$col[clus_age>48] <- "blue"
+clus_res$col[clus_res$clus_age<24] <- "red"
+clus_res$col[clus_res$clus_age>24 & clus_res$clus_age<48] <- "orange"
+clus_res$col[clus_res$clus_age>48] <- "blue"
+
+#summary(as.numeric(clus_res$clus_age))
 
 # Convert the timestamps
 clus_res$timestamp.first <- with_tz(ymd_hms(clus_res$timestamp.first), tz="America/Costa_Rica")
@@ -1324,10 +1331,14 @@ ids <- unique(sub_dat_df$name)
 The following is a list of all of the clusters in the above map, ordered by age (newest first):
 
 ```{r, echo=F, warning=F, message=F}
- tmp <- clus_res[,c("local.identifier","timestamp.first", "rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
+ tmp <- clus_res[,c("local.identifier","clus_age","timestamp.first","timestamp.last" ,"rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
  tmp <- tmp[order(tmp$timestamp.first, decreasing=T),]
-  colnames(tmp) <- c("name", "start_time", "long", "lat", "npos", "duration", "code")
- tmp$duration <- round(tmp$duration,1)
+ tmp$date <- substr(tmp$timestamp.first,1,10)
+ tmp$time.range <- paste(substr(tmp$timestamp.first,12,16), "-", substr(tmp$timestamp.last,12,16)) 
+ tmp <- tmp[,c("local.identifier","clus_age_hrs","date","time.range" ,"rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
+ colnames(tmp) <- c("name","cluster_age", "date","timeRange", "long", "lat", "npos", "duration", "code")
+ 
+  tmp$duration <- round(tmp$duration,1)
 
   tmp %>%
   kbl(row.names = FALSE) %>%
@@ -2352,13 +2363,13 @@ xform <- list(categoryorder = "array",
               categoryarray = c(check_in_summary$name))
 
 
-fig <- plot_ly(check_in_summary, x = ~name, y = ~locs_per_day, type = 'bar',
+fig <- plot_ly(check_in_summary, x = ~name, y = ~locs_per_hour, type = 'bar',
 
         marker = list(color = cols[as.factor(check_in_summary$country)]),
         text=check_in_summary$country,
         hoverinfo='y')
 
-fig <- fig %>% layout(title = "Locations per day",
+fig <- fig %>% layout(title = "Locations per hour",
                       xaxis = xform,
                       xaxis = list(title = ""),
                       yaxis = list(title = "", hoverformat = '.1f'))
