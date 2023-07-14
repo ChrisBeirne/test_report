@@ -1335,8 +1335,8 @@ The following is a list of all of the clusters in the above map, ordered by age 
  tmp <- tmp[order(tmp$timestamp.first, decreasing=T),]
  tmp$date <- substr(tmp$timestamp.first,1,10)
  tmp$time.range <- paste(substr(tmp$timestamp.first,12,16), "-", substr(tmp$timestamp.last,12,16)) 
- tmp <- tmp[,c("local.identifier","clus_age_hrs","date","time.range" ,"rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
- colnames(tmp) <- c("name","cluster_age", "date","timeRange", "long", "lat", "npos", "duration", "code")
+ tmp <- tmp[,c("local.identifier","clus_age","date","time.range" ,"rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
+ colnames(tmp) <- c("name","cluster_age_h", "date","timeRange", "long", "lat", "npos", "duration", "code")
  
   tmp$duration <- round(tmp$duration,1)
 
