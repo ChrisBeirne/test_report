@@ -198,6 +198,10 @@ cr_locs<- data.frame(location_code=c("AIRS02", "CERR02","LOMAS01"),
            longitude=c( -83.35852,	-83.31793,	-83.29787) )
 
 
+# Add peru survey locations
+pe_locs<- data.frame(location_code=c("VT_MANU01"), 	
+           latitude=c(-12.887758)	,
+           longitude=c( -71.403264) )
 
 
 
@@ -529,6 +533,10 @@ m <- leaflet() %>%
     }
     
   m <- m %>%
+     # Add survey location
+      addMarkers(lng=pe_locs$longitude,
+                         lat=pe_locs$latitude, 
+                         popup=pe_locs$location_code) %>% 
       addLegend(position= "topright", colors=tmp_peru_shp$colours, 
                 labels=ids ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
@@ -733,6 +741,10 @@ m <- leaflet() %>%
     }
 
   m <- m %>%
+      # Add survey location
+      addMarkers(lng=pe_locs$longitude,
+                         lat=pe_locs$latitude, 
+                         popup=pe_locs$location_code) %>% 
       addLegend(position= "topright", colors=tmp_peru_48_shp$colours, 
                 labels=ids ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
