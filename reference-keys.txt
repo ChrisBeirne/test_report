@@ -1,9 +1,13 @@
 device-status
-last-locations
 costa-rica
 peru
-cluster-detection
+ecuador
+last-locations
 costa-rica-1
+peru-1
+ecuador-1
+cluster-detection
+costa-rica-2
 roost-and-nest-sites
 nighttime-roost-movement-summary
 heat-maps
