@@ -57,9 +57,7 @@ jobs:
         run: Rscript -e "install.packages('foreach')"
       - name: Install maptools
         run: Rscript -e "install.packages('maptools')"
-      - name: Install leaflet.opacity
-        run: Rscript -e "install.packages('leaflet.opacity')"
-      - name: Install leaflet.opacity
+      - name: Install leaflet.extras
         run: Rscript -e "install.packages('leaflet.extras')"
       - name: Render Book
         env: 

@@ -35,7 +35,7 @@ library(readxl)
 library(geosphere)
 library(foreach)
 library(maptools)
-library(leaflet.opacity)
+#library(leaflet.opacity)
 library(leaflet.extras)
 
 options(googledrive_quiet = TRUE)
