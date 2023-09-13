@@ -67,10 +67,19 @@ animals <-getMovebankAnimals(study=1573471517,login=loginStored)
 tmp <-getMovebankAnimals(study=2526574641,login=loginStored)
 # Tapir
 tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
-animals <- rbind(animals, tmp,tmp2)
+# Carnivores
+tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
-# For some reason they are duplicated
-animals[duplicated(animals)==F,]
+# andean condor foundation
+tmp4 <- getMovebankAnimals(study=2885579493,login=loginStored)
+
+# Move nickname to locak_identifier
+tmp4$local_identifier <- tmp4$nick_name
+tmp4$animalName <- tmp4$nick_name
+
+animals <- rbind(animals, tmp,tmp2, tmp3, tmp4)
+
+# They are duplicated as there are two types of data - subset to GPS
 # They vary by the field "sensor_type_id"
 animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==F,]
 
@@ -85,24 +94,31 @@ animals$timestamp_end <- ymd_hms(animals$timestamp_end)
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
-start_tapir <- t-as.difftime(48,units='days')
+start_mammal <- t-as.difftime(48,units='days')
 
 # Vultures
-mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+tmp1 <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
 #OCelot
-tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
+tmp2 <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 #Tapir
-tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=start_tapir)
-
+tmp3 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_mammal)
 # Remove the obvious outlier
-tmp2 <- tmp2[tmp2$location_lat>8,]
+tmp3 <- tmp3[tmp3$location_lat>8,]
 
-mov_dat <- moveStack(mov_dat, tmp, tmp2)
+#Carnivores
+tmp4 <- getMovebankData(study=2957292408, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_mammal)
 
+#Andean condor foundation
+tmp5 <- getMovebankData(study=2885579493, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_mammal)
 
+ec_names <- data.frame(code=row.names(tmp5@idData), name=(tmp5@idData$nick_name))
+
+mov_dat <- moveStack(tmp1, tmp2, tmp3, tmp4, tmp5)
 
 #Add the names
 mov_dat$name <- trackId(mov_dat)
@@ -125,6 +141,7 @@ dat <- left_join(dat, animals[, c("tag_id", "animalName")])
 # Sort the names out
 
 dat$animalName <- sub('\\_.*', '', dat$animalName)
+
 # Add in the taxonomic group
 dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
 
@@ -183,12 +200,20 @@ bairdii <- makeIcon(
   iconWidth = 38, iconHeight = 40,
   iconAnchorX = 22, iconAnchorY = 39)
 
+microtis <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/sed.png",
+  iconWidth = 38, iconHeight = 40,
+  iconAnchorX = 22, iconAnchorY = 39)
+
+
+
 iconSet <- iconList(aura= aura,
                     papa =papa,
                     melambrotus = mela,
                     atratus = atra,
                     pardalis = pardalis,
-                    bairdii = bairdii)
+                    bairdii = bairdii,
+                    microtis = microtis)
 
 dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
 
@@ -214,14 +239,27 @@ The project currently contains `r length(unique(dat$tag_id))` active tag deploym
 ```{r  c02, include=F}
 
 # Add a country column
-dat$country <- dat$location_lat<0
-dat$country[dat$country==T] <- "peru"
-dat$country[dat$country==F] <- "costa_rica"
+dat$country <- NA
+dat$country[dat$location_lat>6] <- "costa_rica"
+dat$country[dat$location_lat>(-6) & dat$location_lat<6] <- "ecuador"
+dat$country[dat$location_lat<(-6)] <- "peru"
+
 #table(dat$country)
 
 # Costa rica
 # Convert to shapefiles
 dat <- dat[order(dat$animalName),]
+
+
+# Rename the ecuador tags
+dat$name<- as.character(dat$name)
+i <- 1
+for(i in 1: nrow(ec_names))
+  {
+    dat$name[dat$name==ec_names$code[i]] <- ec_names$name[i]      
+  }
+dat$name<- as.factor(dat$name)
+
 
 lfc <- do.call(st_sfc,
               lapply(split(dat, dat$name),
@@ -337,7 +375,7 @@ fig %>% add_pie(data = dplyr::count(check_in_summary, taxon_canonical_name), lab
 
 Last 14 days:
 
-*Costa Rica*
+### Costa Rica
 
 ```{r, echo=F}
 tmp_cr <- dat[dat$country=="costa_rica",]
@@ -446,8 +484,7 @@ fig
 
 
 ```
-
-*Peru*
+### Peru
 
 ```{r, echo=F}
 tmp_peru <- dat[dat$country=="peru",]
@@ -466,38 +503,6 @@ tmp_peru_shp$colours <- col.cat[tmp_peru_shp$name]
 ```
 
 We currently have `r length(unique(tmp_peru$name))` devices transmitting data in Peru:
-
-```{r, echo=F, eval=F}
-# Old map
-m <- leaflet() %>%
-  # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
-  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>%     
-  addCircleMarkers(lng=tmp_peru$location_long, lat=tmp_peru$location_lat,
-                   # Colour the markers depending on the 'feature type'
-                   color=tmp_peru$colours,
-                   radius=3,
-                   stroke=F,
-                   # Add a popup of the deployment code 
-                   popup=paste(tmp_peru$name, tmp_peru$timestamp)) %>%
-  addPolylines(data=tmp_peru_shp, color = tmp_peru_shp$colours, weight = 1, smoothFactor = 0.5,
-              opacity = 1.0, fillOpacity = 0.5) %>% 
-  # Add a legend explaining what is going on
-  addLegend("bottomright", colors = col.cat,  labels = levels(tmp_peru[,"name"]),
-            title = "Name",
-            labFormat = labelFormat(prefix = "$"),
-            opacity = 1
-  ) %>%
-  # add a layer control box to toggle between the layers
-  addLayersControl(
-    baseGroups = c("OS", "Simple", "Satellite"),
-    options = layersControlOptions(collapsed = FALSE)
-  ) %>%
-  addFullscreenControl()
-m
-```
-
 
 
 ```{r, echo=F}
@@ -537,8 +542,8 @@ m <- leaflet() %>%
       addMarkers(lng=pe_locs$longitude,
                          lat=pe_locs$latitude, 
                          popup=pe_locs$location_code) %>% 
-      addLegend(position= "topright", colors=tmp_peru_shp$colours, 
-                labels=ids ,opacity = 0.7, title = "Animals") %>%
+      #addLegend(position= "topright", colors=tmp_peru_shp$colours, 
+      #          labels=ids ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
@@ -553,27 +558,158 @@ m
 
 
 
-Daily schedule of the tags:
+Daily schedule of the tags (note this is in Costa Rica time):
 
 ```{r, echo=F, warning=F, message=F}
 
+xform <- list(categoryorder = "array",
+              categoryarray = c(check_in_summary$name))
+
 tmp_peru$hour <- as.numeric(substr(tmp_peru$timestamp,12,13))
 tmp_peru$hour <- factor(tmp_peru$hour, levels=0:23)
-
 tmp_peru$name <- as.factor(tmp_peru$name)
-
 tmp_peru2 <- tmp_peru %>% group_by(name, hour, .drop=F) %>% dplyr::summarize(obs=n())
 
+# Tag activity - account for survey effort
+tmp_act_peru <- tmp_peru %>% group_by(name, .drop=F) %>% dplyr::summarize(start=min(timestamp), end=max(timestamp))
 
-fig <- plot_ly(tmp_peru2, x = ~hour, y = ~obs, name = tmp_peru2$name, type = 'scatter', mode = 'lines',split = ~name) 
-fig <- fig %>%  layout(title = "Hourly locations",
+tmp_act_peru$duration <- as.numeric(difftime(tmp_act_peru$end, tmp_act_peru$start, units="days"))
+tmp_peru2 <- tmp_peru %>% group_by(name, hour, .drop=F) %>% dplyr::summarize(obs=n())
+
+tmp_peru2 <- left_join(tmp_peru2, tmp_act_peru)
+
+tmp_peru2$sampling_rate <- tmp_peru2$obs/tmp_peru2$duration
+
+# Add in the colour code
+cols <- col.cat[1:length(levels(tmp_peru2$name))]
+
+
+fig <- plot_ly(tmp_peru2, x = ~hour, y = ~sampling_rate, name = tmp_peru2$name, type = 'scatter', mode = 'lines',split = ~name,color=~name, colors=cols) 
+fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
                       xaxis = xform,
                       xaxis = list(title = ""),
-                      yaxis = list(title = "Number of locations"))
+                      yaxis = list(title = "Locations per hour"))
 
 fig
 
+
+
+
 ```
+
+
+### Ecuador
+
+```{r, echo=F}
+tmp_ecuador <- dat[dat$country=="ecuador",]
+tmp_ecuador_shp <- dat_shp[dat_shp$country=="ecuador",]
+
+
+# First lets choose a category to colour
+tmp_ecuador[,"name"] <- factor(tmp_ecuador[,"name"])
+tmp_ecuador_shp$name <- factor(tmp_ecuador_shp$name)
+
+col.cat <- turbo(length(levels(tmp_ecuador[,"name"])))
+# Add it to the dataframe
+tmp_ecuador$colours <- col.cat[tmp_ecuador[,"name"]]
+tmp_ecuador_shp$colours <- col.cat[tmp_ecuador_shp$name]
+
+```
+
+We currently have `r length(unique(tmp_ecuador$name))` devices transmitting data in ecuador:
+
+
+```{r, echo=F}
+# New map
+ids <- tmp_ecuador_shp$name
+i <- 1
+m <- leaflet() %>%
+  # Add a satellite image layer
+  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
+
+  for (i in seq(along=ids))
+    {
+      m <- m %>%
+        addPolylines(data = tmp_ecuador_shp[i,], color = tmp_ecuador_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
+        addCircleMarkers(lng=tmp_ecuador$location_long[tmp_ecuador$name==ids[i]],
+                         lat=tmp_ecuador$location_lat[tmp_ecuador$name==ids[i]], 
+                         popup=paste(tmp_ecuador$timestamp[tmp_ecuador$name==ids[i]]),
+                         fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_ecuador_shp$colours[i], group = ids[i], stroke=F) %>%
+        addCircleMarkers(lng=last(tmp_ecuador$location_long[tmp_ecuador$name==ids[i]]),
+                         lat=last(tmp_ecuador$location_lat[tmp_ecuador$name==ids[i]]), 
+                         popup=paste(last(tmp_ecuador$timestamp[tmp_ecuador$name==ids[i]])),
+                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_ecuador_shp$colours[i], group = ids[i], stroke=F)  %>% 
+        # Add the last point
+        addMarkers(lng=last(tmp_ecuador$location_long[tmp_ecuador$name==ids[i]]),
+                         lat=last(tmp_ecuador$location_lat[tmp_ecuador$name==ids[i]]), 
+                         popup=paste(last(tmp_ecuador$local_identifier[tmp_ecuador$name==ids[i]]),
+                                     "<br>Time:",last(tmp_ecuador$timestamp[tmp_ecuador$name==ids[i]]),
+                                     "<br>Long:",last(tmp_ecuador$location_long[tmp_ecuador$name==ids[i]]),
+                                     "<br>Lat:",last(tmp_ecuador$location_lat[tmp_ecuador$name==ids[i]])),
+                   icon = iconSet[tmp_ecuador$icon[tmp_ecuador$name==ids[i]][1]], group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_ecuador_shp$colours[i], group = ids[i], stroke=F
+    }
+    
+  m <- m %>%
+     # # Add survey location
+     #  addMarkers(lng=pe_locs$longitude,
+     #                     lat=pe_locs$latitude, 
+     #                     popup=pe_locs$location_code) %>% 
+      #addLegend(position= "topright", colors=tmp_ecuador_shp$colours, 
+      #          labels=ids ,opacity = 0.7, title = "Animals") %>%
+      addScaleBar(position="topleft", 
+                  options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
+      addLayersControl(
+        baseGroups = c("OS", "Simple", "Satellite"),
+        overlayGroups = ids,
+        options = layersControlOptions(collapsed = FALSE)
+      ) %>%
+  addFullscreenControl()
+  
+m 
+```
+
+Daily schedule of the tags (note this is in Costa Rica time):
+
+```{r, echo=F, warning=F, message=F}
+
+
+xform <- list(categoryorder = "array",
+              categoryarray = c(check_in_summary$name))
+
+tmp_ecuador$hour <- as.numeric(substr(tmp_ecuador$timestamp,12,13))
+tmp_ecuador$hour <- factor(tmp_ecuador$hour, levels=0:23)
+tmp_ecuador$name <- as.factor(tmp_ecuador$name)
+tmp_ecuador2 <- tmp_ecuador %>% group_by(name, hour, .drop=F) %>% dplyr::summarize(obs=n())
+
+# Tag activity - account for survey effort
+tmp_act_ecuador <- tmp_ecuador %>% group_by(name, .drop=F) %>% dplyr::summarize(start=min(timestamp), end=max(timestamp))
+
+tmp_act_ecuador$duration <- as.numeric(difftime(tmp_act_ecuador$end, tmp_act_ecuador$start, units="days"))
+tmp_ecuador2 <- tmp_ecuador %>% group_by(name, hour, .drop=F) %>% dplyr::summarize(obs=n())
+
+tmp_ecuador2 <- left_join(tmp_ecuador2, tmp_act_ecuador)
+
+tmp_ecuador2$sampling_rate <- tmp_ecuador2$obs/tmp_ecuador2$duration
+tmp_ecuador2$sampling_rate[is.na(tmp_ecuador2$sampling_rate)==T]<- 0
+
+# Add in the colour code
+cols <- col.cat[1:length(levels(tmp_ecuador2$name))]
+
+
+fig <- plot_ly(tmp_ecuador2, x = ~hour, y = ~sampling_rate, name = tmp_ecuador2$name, type = 'scatter', mode = 'lines',split = ~name,color=~name, colors=cols) 
+fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
+                      xaxis = xform,
+                      xaxis = list(title = ""),
+                      yaxis = list(title = "Locations per hour"))
+
+fig
+
+
+```
+
+
 
 # Last locations  {.tabset}
 
@@ -745,18 +881,104 @@ m <- leaflet() %>%
       addMarkers(lng=pe_locs$longitude,
                          lat=pe_locs$latitude, 
                          popup=pe_locs$location_code) %>% 
-      addLegend(position= "topright", colors=tmp_peru_48_shp$colours, 
-                labels=ids ,opacity = 0.7, title = "Animals") %>%
+      #addLegend(position= "topright", colors=tmp_peru_48_shp$colours, 
+      #          labels=ids ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
         baseGroups = c("Simple", "OS", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      ) %>%
+  addFullscreenControl()
   
 m 
 ```
+
+
+### Ecuador
+
+```{r, echo=F, message=F, warning=F}
+# Subset to 48 hours
+tmp_ecuador_48 <- dat[dat$country=="ecuador" & dat$timestamp > max(ymd_hms(animals$timestamp_end),na.rm=T)-48*60*60,]
+
+tmp_ecuador_48$name <- as.character(tmp_ecuador_48$name)
+
+# Remake shapefiles
+lfc <- do.call(st_sfc,
+              lapply(split(tmp_ecuador_48, tmp_ecuador_48$name),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+tmp_ecuador_48_shp <- st_sf(data.frame(name=levels(factor(tmp_ecuador_48[,"name"])), geom=lfc))
+
+# add back in the metadata
+tmp_ecuador_48_shp  <- left_join(tmp_ecuador_48_shp,sp_dat)
+
+
+# First lets choose a category to colour
+tmp_ecuador_48[,"name"] <- factor(tmp_ecuador_48[,"name"])
+tmp_ecuador_48_shp$name <- factor(tmp_ecuador_48_shp$name)
+
+col.cat <- turbo(length(levels(tmp_ecuador_48[,"name"])))
+# Add it to the dataframe
+tmp_ecuador_48$colours <- col.cat[tmp_ecuador_48[,"name"]]
+tmp_ecuador_48_shp$colours <- col.cat[tmp_ecuador_48_shp$name]
+
+```
+
+We currently have `r length(unique(tmp_ecuador$name))` devices transmitting data in ecuador:
+
+```{r, echo=F}
+# New map
+ids <- tmp_ecuador_48_shp$name
+i <- 1
+m <- leaflet() %>%
+  # Add a satellite image layer
+  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
+
+  for (i in seq(along=ids))
+    {
+      m <- m %>%
+        addPolylines(data = tmp_ecuador_48_shp[i,], color = tmp_ecuador_48_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
+        addCircleMarkers(lng=tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]],
+                         lat=tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]], 
+                         popup=paste(tmp_ecuador_48$timestamp[tmp_ecuador_48$name==ids[i]]),
+                         fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_ecuador_48_shp$colours[i], group = ids[i], stroke=F) %>%
+        addCircleMarkers(lng=last(tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]]),
+                         lat=last(tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]]), 
+                         popup=paste(last(tmp_ecuador_48$timestamp[tmp_ecuador_48$name==ids[i]])),
+                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_ecuador_48_shp$colours[i], group = ids[i], stroke=F) %>%
+        
+        # The last point
+        addMarkers(lng=last(tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]]),
+                         lat=last(tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]]), 
+                         popup=paste(last(tmp_ecuador_48$local_identifier[tmp_ecuador_48$name==ids[i]]),
+                                     "<br>Time:",last(tmp_ecuador_48$timestamp[tmp_ecuador_48$name==ids[i]]),
+                                     "<br>Long:",last(tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]]),
+                                     "<br>Lat:",last(tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]])),
+                   icon = iconSet[tmp_ecuador_48$icon[tmp_ecuador_48$name==ids[i]][1]], group=ids[i])
+    }
+
+  m <- m %>%
+      # # Add survey location
+      # addMarkers(lng=pe_locs$longitude,
+      #                    lat=pe_locs$latitude, 
+      #                    popup=pe_locs$location_code) %>% 
+      #addLegend(position= "topright", colors=tmp_ecuador_48_shp$colours, 
+      #          labels=ids ,opacity = 0.7, title = "Animals") %>%
+      addScaleBar(position="topleft", 
+                  options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
+      addLayersControl(
+        baseGroups = c("Simple", "OS", "Satellite"),
+        overlayGroups = ids,
+        options = layersControlOptions(collapsed = FALSE)
+      ) %>%
+  addFullscreenControl()
+  
+m 
+```
+
 
 # Cluster detection
 
