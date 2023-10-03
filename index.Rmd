@@ -723,7 +723,7 @@ The following maps relate to just the last 48 hours of data for actively transmi
 
 ### Costa Rica
 
-```{r, echo=F, message=F, warning=F}
+```{r echo=F, message=FALSE, warning=FALSE}
 # Last 48 hours
 # Vulture
 tmp_cr_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(animals$timestamp_end, na.rm=T)-48*60*60 & dat$taxon_canonical_name %in% c("Cathartes aura" ,"Cathartes melambrotus", "Sarcoramphus papa", "Coragyps atratus"),]
@@ -865,8 +865,15 @@ m <- leaflet() %>%
         addPolylines(data = tmp_peru_48_shp[i,], color = tmp_peru_48_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
         addCircleMarkers(lng=tmp_peru_48$location_long[tmp_peru_48$name==ids[i]],
                          lat=tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]], 
-                         popup=paste(last(tmp_peru_48$name[tmp_ecuador_48$name==ids[i]]),
-                                     "<br>Time:"tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]]),
+                         
+                          
+                         
+                         popup=paste(tmp_peru_48$local_identifier[tmp_peru_48$name==ids[i]],
+                                     "<br>Time:",tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]],
+                                     "<br>Long:",tmp_peru_48$location_long[tmp_peru_48$name==ids[i]],
+                                     "<br>Lat:",tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]]),
+                         
+                         
                          fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_peru_48_shp$colours[i], group = ids[i], stroke=F) %>%
         addCircleMarkers(lng=last(tmp_peru_48$location_long[tmp_peru_48$name==ids[i]]),
                          lat=last(tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]]), 
