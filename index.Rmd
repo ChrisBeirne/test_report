@@ -120,6 +120,12 @@ ec_names <- data.frame(code=row.names(tmp5@idData), name=(tmp5@idData$nick_name)
 
 mov_dat <- moveStack(tmp1, tmp2, tmp3, tmp4, tmp5)
 
+# Remove the random zeros
+summary(mov_dat$location_long)
+mov_dat <- mov_dat[mov_dat$location_long<0,]
+
+
+
 #Add the names
 mov_dat$name <- trackId(mov_dat)
 
@@ -644,7 +650,7 @@ m <- leaflet() %>%
         # Add the last point
         addMarkers(lng=last(tmp_ecuador$location_long[tmp_ecuador$name==ids[i]]),
                          lat=last(tmp_ecuador$location_lat[tmp_ecuador$name==ids[i]]), 
-                         popup=paste(last(tmp_ecuador$local_identifier[tmp_ecuador$name==ids[i]]),
+                         popup=paste(last(tmp_ecuador$name[tmp_ecuador$name==ids[i]]),
                                      "<br>Time:",last(tmp_ecuador$timestamp[tmp_ecuador$name==ids[i]]),
                                      "<br>Long:",last(tmp_ecuador$location_long[tmp_ecuador$name==ids[i]]),
                                      "<br>Lat:",last(tmp_ecuador$location_lat[tmp_ecuador$name==ids[i]])),
@@ -859,7 +865,8 @@ m <- leaflet() %>%
         addPolylines(data = tmp_peru_48_shp[i,], color = tmp_peru_48_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
         addCircleMarkers(lng=tmp_peru_48$location_long[tmp_peru_48$name==ids[i]],
                          lat=tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]], 
-                         popup=paste(tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]]),
+                         popup=paste(last(tmp_peru_48$name[tmp_ecuador_48$name==ids[i]]),
+                                     "<br>Time:"tmp_peru_48$timestamp[tmp_peru_48$name==ids[i]]),
                          fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_peru_48_shp$colours[i], group = ids[i], stroke=F) %>%
         addCircleMarkers(lng=last(tmp_peru_48$location_long[tmp_peru_48$name==ids[i]]),
                          lat=last(tmp_peru_48$location_lat[tmp_peru_48$name==ids[i]]), 
@@ -943,7 +950,8 @@ m <- leaflet() %>%
         addPolylines(data = tmp_ecuador_48_shp[i,], color = tmp_ecuador_48_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
         addCircleMarkers(lng=tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]],
                          lat=tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]], 
-                         popup=paste(tmp_ecuador_48$timestamp[tmp_ecuador_48$name==ids[i]]),
+                         popup=paste(last(tmp_ecuador_48$name[tmp_ecuador_48$name==ids[i]]),
+                                     "<br>Time:", tmp_ecuador_48$timestamp[tmp_ecuador_48$name==ids[i]]),
                          fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_ecuador_48_shp$colours[i], group = ids[i], stroke=F) %>%
         addCircleMarkers(lng=last(tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]]),
                          lat=last(tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]]), 
@@ -953,7 +961,7 @@ m <- leaflet() %>%
         # The last point
         addMarkers(lng=last(tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]]),
                          lat=last(tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]]), 
-                         popup=paste(last(tmp_ecuador_48$local_identifier[tmp_ecuador_48$name==ids[i]]),
+                         popup=paste(last(tmp_ecuador_48$name[tmp_ecuador_48$name==ids[i]]),
                                      "<br>Time:",last(tmp_ecuador_48$timestamp[tmp_ecuador_48$name==ids[i]]),
                                      "<br>Long:",last(tmp_ecuador_48$location_long[tmp_ecuador_48$name==ids[i]]),
                                      "<br>Lat:",last(tmp_ecuador_48$location_lat[tmp_ecuador_48$name==ids[i]])),
