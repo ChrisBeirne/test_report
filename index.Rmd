@@ -39,7 +39,7 @@ library(maptools)
 library(leaflet.extras)
 
 options(googledrive_quiet = TRUE)
-
+#test2
 # For when the trapping effort file is sorted
 # googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTHENTICATION_CREDENTIALS"))
 # 
