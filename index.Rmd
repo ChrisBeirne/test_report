@@ -1566,7 +1566,7 @@ The following is a list of all of the clusters in the above map, ordered by age 
 
 
 ### Peru
-```{r, eval=F, echo=F, message=F, warning=F}
+```{r, eval=T, echo=F, message=F, warning=F}
 # Code derived from
 # https://github.com/movestore/Daily-Rest-Sites
 #library('maptools')
@@ -1610,9 +1610,9 @@ dat_shp <- st_sf(data.frame(name=levels(factor(sub_dat_df[,"name"])), geom=lfc))
 dat_shp  <- left_join(dat_shp,sp_dat)
 
 # Bring in the colours from earlier
-cr_cols <- tmp_peru[, c("name", "colours")]
-cr_cols <- cr_cols[duplicated(cr_cols)==F,]
-dat_shp <- left_join(dat_shp, cr_cols)
+pe_cols <- tmp_peru[, c("name", "colours")]
+pe_cols <- pe_cols[duplicated(pe_cols)==F,]
+dat_shp <- left_join(dat_shp, pe_cols)
 # Make shapefile of the tracks to add later
 
 #plot(sub_dat_df$ground_speed, sub_dat_df$speed)
@@ -2094,7 +2094,7 @@ ids <- unique(sub_dat_df$name)
 
 The following is a list of all of the clusters in the above map, ordered by age (newest first):
 
-```{r, echo=F, warning=F, message=F, eval=F}
+```{r, echo=F, warning=F, message=F, eval=T}
  tmp <- clus_res[,c("local.identifier","clus_age","timestamp.first","timestamp.last" ,"rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
  tmp <- tmp[order(tmp$timestamp.first, decreasing=T),]
  tmp$date <- substr(tmp$timestamp.first,1,10)
@@ -2126,10 +2126,12 @@ Potential nest = A bird returning to the same location through time (across mult
 
 If a birds night-time roost is does not change then the average roost spacing will be very low (<0.5 km - green rows). We should also look at the data where the average roost spacing is <1km (orange rows). All other rows are white:
 
+#### Costa Rica
+
 ```{r, eval=T, echo=F, warning=F, message=F}
 sub_dat <- mov_dat[mov_dat$location_lat>0,]
 # Remove the non-vultures
-sub_dat <- sub_dat[sub_dat$name %in% animals$name[animals$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Cathartes melambrotus" )],]
+sub_dat <- sub_dat[sub_dat$name %in% animals$name[animals$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Cathartes melambrotus", "Coragyps atratus" )],]
 
 
 # remove empty levels
@@ -2307,6 +2309,123 @@ m
 #   
 
 ```
+
+#### Peru
+
+```{r, eval=T, echo=F, warning=F, message=F}
+sub_dat <- mov_dat[mov_dat$location_lat<(-6),]
+# Remove the non-vultures
+sub_dat <- sub_dat[sub_dat$name %in% animals$name[animals$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Cathartes melambrotus", "Coragyps atratus" )],]
+
+
+# remove empty levels
+sub_dat$name <- factor(sub_dat$name)
+
+
+sub_dat_df <- as.data.frame(sub_dat)
+sub_dat_df$id <- paste0(sub_dat_df$name,"_", substr(sub_dat_df$timestamp,1,10))
+first_and_last <- sub_dat_df %>%
+  group_by(id) %>%
+  #arrange(stopSequence) %>%
+  filter(row_number()==1 | row_number()==n())
+
+#first_and_last[, c("name", "timestamp")]
+
+# Create a night column -> where each unique night has its own ID
+first_and_last$night_id <- paste0("n_", as.numeric(as.factor(substr(first_and_last$timestamp - hours(12),1,10))))
+#first_and_last[, c("name", "timestamp", "night_id")]
+# Great - remove n_1 as there should only be on observation
+
+
+
+#hist(as.numeric(substr(sub_dat$timestamp, 12,13)), breaks=seq(3.5,23.5,1))
+#hist(as.numeric(substr(night_dat$timestamp, 12,13)), breaks=seq(3.5,23.5,1))
+
+
+#plot(night_dat)
+#night_dat_df <- as.data.frame(night_dat)
+
+
+#night_dat_df <- night_dat_df[order(night_dat_df$name),]
+first_and_last <- first_and_last[order(first_and_last$name),]
+#Convert from tibble
+first_and_last <- as.data.frame(first_and_last)
+
+lfc <- do.call(st_sfc,
+              lapply(split(first_and_last, first_and_last$name),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+night_shp <- st_sf(data.frame(name=levels(factor(first_and_last[,"name"])), geom=lfc))
+
+st_crs(night_shp) <- 4326
+
+# Add the colours
+pe_cols <- tmp_peru[, c("name", "colours")]
+pe_cols <- pe_cols[duplicated(pe_cols)==F,]
+pe_cols$name<- sub('\\_.*', '', pe_cols$name)
+
+pe_cols$name <- as.character(pe_cols$name)
+
+night_shp <- left_join(night_shp, pe_cols)
+
+#night_dat_df <- left_join(night_dat_df, pe_cols, by=c("name"= "name"))
+first_and_last <- left_join(first_and_last, pe_cols, by=c("name"= "name"))
+
+tmp <- first_and_last %>% group_by(name) %>%  dplyr::summarise(nights=n_distinct(night_id))
+night_shp <- left_join(night_shp, tmp, by=c("name"="name"))
+
+night_shp$roost_spacing_km <- round(as.numeric((st_length(night_shp)/1000)/night_shp$nights),1)
+
+night_shp_df <- as.data.frame(night_shp)
+night_shp_df$geometry<- NULL
+
+night_shp_df <- night_shp_df[,c("name", "roost_spacing_km"),]
+night_shp_df <- night_shp_df[order(night_shp_df$roost_spacing_km),]
+
+# Determine colours
+night_shp_df$col <- "white"
+night_shp_df$col[night_shp_df$roost_spacing_km<0.5] <- "#99d8c9"
+night_shp_df$col[night_shp_df$roost_spacing_km>0.5 & night_shp_df$roost_spacing_km<1 ] <- "#ffeda0"
+
+night_shp_df[,c("name", "roost_spacing_km")] %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()  %>% 
+  column_spec(c(1,2), background = night_shp_df$col) %>%
+  kableExtra::scroll_box(width = "100%")
+
+```
+
+You can see the distribution of the nightime locations with the following map.  Where: the points mark the first and last observations from each day, and the lines connect those points. Animals which are nesting will have a very tight cluster of points. 
+
+```{r, eval=T, echo=F}
+m <- leaflet() %>%
+  # Add a satellite image layer  
+  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
+  m <- m %>%
+        addPolylines(data = night_shp, color = night_shp$colours, weight=3,opacity=0.3, popup=night_shp$name, group=night_shp$name) %>% 
+        addCircleMarkers(lng=first_and_last$location_long,
+                         lat=first_and_last$location_lat, 
+                         popup=paste("name"=first_and_last$name, "<br>Time = ", substr(first_and_last$timestamp,12,16), "Date = ",substr(first_and_last$timestamp,1,10),
+                                  "<br>Lon = ", round(first_and_last$location_long,6), "Lat = ",round(first_and_last$location_lat,6)),
+                         fillOpacity = 0.3, opacity = 0.7, radius=4, color=first_and_last$colours)%>%
+      addScaleBar(position="topleft", 
+                  options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
+      addLayersControl(
+        baseGroups = c("OS", "Simple", "Satellite"),
+        overlayGroups = night_shp$name,
+        options = layersControlOptions(collapsed = FALSE)
+      )%>%
+  addFullscreenControl()  #%>%
+     #addLegend(position= "topright", colors=night_shp$colours, 
+      #          labels=night_shp$name ,opacity = 0.7, title = "Animals") 
+
+  
+m
+
+
+```
+
 
 
 ```{r, eval=F}
@@ -2784,7 +2903,7 @@ fig <- plot_ly(x = tmp$timestamp, y = tmp$name,type="scatter",
                              line = list(color = 'rgba(0, 0, 0, 0)',
                                          width = 0))) %>% 
               layout(yaxis = yform,
-                     title = "Costa Rica")
+                     title = "Peru")
 fig
 
 ```
@@ -2806,7 +2925,7 @@ fig <- plot_ly(x = tmp$timestamp, y = tmp$name,type="scatter",
                              line = list(color = 'rgba(0, 0, 0, 0)',
                                          width = 0))) %>% 
               layout(yaxis = yform,
-                     title = "Costa Rica")
+                     title = "Ecuador")
 fig
 
 ```
