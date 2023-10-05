@@ -84,7 +84,7 @@ animals <- rbind(animals, tmp,tmp2, tmp3, tmp4)
 animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==F,]
 
 # Clean up the name
-animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ .*', '', animals$taxon_canonical_name))
+animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ .*', '', animals$individual_taxon_canonical_name))
 animals$name <- sub('\\_.*', '', animals$animalName)
 
 # Sort date objects
@@ -99,8 +99,9 @@ start_mammal <- t-as.difftime(48,units='days')
 # Vultures
 tmp1 <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
-#OCelot
-tmp2 <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
+
+#OCelot - removed as collar no longer reporting
+#tmp2 <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 #Tapir
 tmp3 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
@@ -118,7 +119,7 @@ tmp5 <- getMovebankData(study=2885579493, login=loginStored,  removeDuplicatedTi
 
 ec_names <- data.frame(code=row.names(tmp5@idData), name=(tmp5@idData$nick_name))
 
-mov_dat <- moveStack(tmp1, tmp2, tmp3, tmp4, tmp5)
+mov_dat <- moveStack(tmp1, tmp3, tmp4, tmp5)
 
 # Remove the random zeros
 summary(mov_dat$location_long)
@@ -149,7 +150,7 @@ dat <- left_join(dat, animals[, c("tag_id", "animalName")])
 dat$animalName <- sub('\\_.*', '', dat$animalName)
 
 # Add in the taxonomic group
-dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
+dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$individual_taxon_canonical_name))
 
 # # Setup the leaflet icon
 # leafIcons <- icons(
@@ -221,7 +222,7 @@ iconSet <- iconList(aura= aura,
                     bairdii = bairdii,
                     microtis = microtis)
 
-dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
+dat$icon <- sub(".*? ", "", dat$individual_taxon_canonical_name)
 
 # Add costa rica survey locations
 cr_locs<- data.frame(location_code=c("AIRS02", "CERR02","LOMAS01"), 	
@@ -275,7 +276,7 @@ dat_shp <- st_sf(data.frame(name=levels(factor(dat[,"name"])), geom=lfc))
 #plot(dat$location_long[dat$country=="costa_rica"], dat$location_lat[dat$country=="costa_rica"])
 #plot(st_geometry(dat_shp), add=T)
 
-sp_dat <- dat[,c("name",    "country", "taxon_canonical_name" )]
+sp_dat <- dat[,c("name",    "country", "individual_taxon_canonical_name" )]
 sp_dat <- sp_dat[duplicated(sp_dat)==F,]
 
 # add back in the metadata
@@ -296,7 +297,7 @@ last_sum  <- dat %>%
   slice(which.max(timestamp))
 
 
-tmp <- last_sum[, c("name","taxon_canonical_name","country", "timestamp", "diff_time")]
+tmp <- last_sum[, c("name","individual_taxon_canonical_name","country", "timestamp", "diff_time")]
 colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
 colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
 check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
@@ -351,31 +352,33 @@ tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
 
 **Tagging summary**
 
-The proportion of active tags by country:
+The proportion of active tags by country and species:
 
-```{r, echo=F}
-library(plotly)
-
-library(dplyr)
-
-fig <- plot_ly()
-# All vultures - Countries
-fig %>% add_pie(data = dplyr::count(check_in_summary, country), labels = ~country, values = ~n,
-
-          name = "Country")
-```
-
-And by species:
-
-```{r, echo=F}
+```{r, echo=F, eval=F}
+# And by species:
 fig <- plot_ly()
 # All vultures - Species
-fig %>% add_pie(data = dplyr::count(check_in_summary, taxon_canonical_name), labels = ~taxon_canonical_name, values = ~n,
+fig %>% add_pie(data = dplyr::count(check_in_summary, individual_taxon_canonical_name), labels = ~individual_taxon_canonical_name, values = ~n,
 
           name = "Species")
 
 ```
 
+```{r, echo=F}
+
+data <- t(as.data.frame.matrix(table(check_in_summary$individual_taxon_canonical_name, check_in_summary$country)))
+data <- as.data.frame(data)
+data$country <- row.names(data)
+fig <- plot_ly(data, x = ~country, y = ~data$`Sarcoramphus papa`, type = 'bar', name = 'King vulture')
+fig <- fig %>% add_trace(y = ~data$`Cathartes melambrotus`, name = 'GYH vulture')
+fig <- fig %>% add_trace(y = ~data$`Cathartes aura`, name = 'Turkey vulture')
+fig <- fig %>% add_trace(y = ~data$`Coragyps atratus`, name = 'Black vulture')
+fig <- fig %>% add_trace(y = ~data$`Tapirus bairdii`, name = 'Tapir')
+fig <- fig %>% add_trace(y = ~data$`Atelocynus microtis`, name = 'Short-eared dog')
+fig <- fig %>% layout(yaxis = list(title = 'Count'), barmode = 'stack')
+
+fig
+```
 
 **Maps**
 
@@ -726,16 +729,16 @@ The following maps relate to just the last 48 hours of data for actively transmi
 ```{r echo=F, message=FALSE, warning=FALSE}
 # Last 48 hours
 # Vulture
-tmp_cr_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(animals$timestamp_end, na.rm=T)-48*60*60 & dat$taxon_canonical_name %in% c("Cathartes aura" ,"Cathartes melambrotus", "Sarcoramphus papa", "Coragyps atratus"),]
+tmp_cr_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(animals$timestamp_end, na.rm=T)-48*60*60 & dat$individual_taxon_canonical_name %in% c("Cathartes aura" ,"Cathartes melambrotus", "Sarcoramphus papa", "Coragyps atratus"),]
 #Mammals
-tmp_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(animals$timestamp_end, na.rm=T)-336*60*60 & !(dat$taxon_canonical_name %in% c("Cathartes aura" ,"Cathartes melambrotus", "Sarcoramphus papa", "Coragyps atratus")),]
+tmp_48 <- dat[dat$country=="costa_rica" & dat$timestamp > max(animals$timestamp_end, na.rm=T)-336*60*60 & !(dat$individual_taxon_canonical_name %in% c("Cathartes aura" ,"Cathartes melambrotus", "Sarcoramphus papa", "Coragyps atratus")),]
 
 tmp_cr_48 <- rbind(tmp_48, tmp_cr_48)
 
 
 
 tmp_cr_48$name <- as.character(tmp_cr_48$name)
-#table(dat$taxon_canonical_name)
+#table(dat$individual_taxon_canonical_name)
 # Remake shapefiles
 lfc <- do.call(st_sfc,
               lapply(split(tmp_cr_48, tmp_cr_48$name),
@@ -1030,16 +1033,16 @@ sub_dat <- sub_dat[sub_dat$timestamp>start_t2,]
 
 sub_dat$speed <- unlist(lapply(move::speed(sub_dat),c, NA ))
 sub_dat_df <- as.data.frame(sub_dat)
-sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "name", "taxon_canonical_name")])
+sub_dat_df <- left_join(sub_dat_df, animals[, c("tag_id", "name", "individual_taxon_canonical_name")])
 
 # Subset to just vultures
-sub_dat_df <- sub_dat_df[sub_dat_df$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Coragyps atratus", "Cathartes melambrotus"),]
+sub_dat_df <- sub_dat_df[sub_dat_df$individual_taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Coragyps atratus", "Cathartes melambrotus"),]
 
 
 sub_dat_df <- sub_dat_df[order(sub_dat_df$name),]
 
 # Add in icon column
-sub_dat_df$icon <- sub(".*? ", "", sub_dat_df$taxon_canonical_name)
+sub_dat_df$icon <- sub(".*? ", "", sub_dat_df$individual_taxon_canonical_name)
 
 
 
@@ -2029,7 +2032,7 @@ If a birds night-time roost is does not change then the average roost spacing wi
 ```{r, eval=T, echo=F, warning=F, message=F}
 sub_dat <- mov_dat[mov_dat$location_lat>0,]
 # Remove the non-vultures
-sub_dat <- sub_dat[sub_dat$name %in% animals$name[animals$taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Cathartes melambrotus" )],]
+sub_dat <- sub_dat[sub_dat$name %in% animals$name[animals$individual_taxon_canonical_name %in% c("Cathartes aura", "Sarcoramphus papa", "Cathartes melambrotus" )],]
 
 
 # remove empty levels
@@ -2208,16 +2211,20 @@ m
 
 ```
 
+
+```{r, eval=F}
 # Heat maps
 
-The following maps are heat maps of all of the data we have for certain individuals. Note, we do not do this for every individual as it would mean using a lot of bandwidth each time the report updates.
+#The following maps are heat maps of all of the data we have for certain individuals. Note, we do not do this for every individual as it #would mean using a lot of bandwidth each time the report updates.
 
-CURRENTING FAILING -> UPDATING TO MOVE2
+#CURRENTING FAILING -> UPDATING TO MOVE2
 
 
 ### Juancito
 
-```{r, eval=F}
+
+
+
 #Tapir
 
 tmp_tapir <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE)
@@ -2288,9 +2295,11 @@ leaflet() %>%
 
 ```
 
-### Tuva
+
 
 ```{r, eval=F}
+### Tuva
+
 #Tapir
 tmp <- tmp_tapir[["Tuva"]]
   
@@ -2363,9 +2372,11 @@ leaflet() %>%
 
 
 
-### Pardo
+
 
 ```{r, eval=F}
+### Pardo
+
 # Create heatmaps using lifetime tracks
 
 #OCelot
@@ -2435,12 +2446,15 @@ leaflet() %>%
 ?addLayersControl
 ```
 
-# Interactions
 
-Coming soon!
 
 
 ```{r, eval=F}
+
+# Interactions
+
+#Coming soon!
+
 library(wildlifeDI)
 
 # Vultures
@@ -2560,16 +2574,19 @@ The following plots track how the tags are performing in the field.
 Average battery level (last 14 days):
 
 ```{r, echo=F, warning=FALSE}
-cols<- c("#fc8d59", "#99d594")
+cols<- c("#fc8d59", "#99d594", "#0099ff")
+#str(check_in_summary)
 
-fig <- plot_ly(check_in_summary, x = ~name, y = ~mean_batt, type = 'bar',
+tmp <- check_in_summary[is.na(check_in_summary$mean_batt)==F,]
 
-        marker = list(color = cols[as.factor(check_in_summary$country)]),
-        text=check_in_summary$country,
+fig <- plot_ly(tmp, x = ~name, y = ~mean_batt, type = 'bar',
+
+        marker = list(color = cols[as.factor(tmp$country)]),
+        text=paste0(tmp$name,"\n" ,tmp$country),
         hoverinfo='text')
 
 fig <- fig %>% layout(title = "Battery power",
-                      xaxis = xform,
+                      xaxis = list(categoryorder = "trace"),
                       xaxis = list(title = ""),
                       yaxis = list(title = ""))
 
@@ -2584,14 +2601,17 @@ fig
 Average horizontal location accuracy (last 14 days):
 
 ```{r, echo=F, warning=F}
-fig <- plot_ly(check_in_summary, x = ~name, y = ~loc_accuracy, type = 'bar',
 
-        marker = list(color = cols[as.factor(check_in_summary$country)]),
-        text=check_in_summary$country,
+tmp <- check_in_summary[is.na(check_in_summary$loc_accuracy)==F,]
+
+fig <- plot_ly(tmp, x = ~name, y = ~loc_accuracy, type = 'bar',
+
+        marker = list(color = cols[as.factor(tmp$country)]),
+        text=paste0(tmp$name,"\n" ,tmp$country),
         hoverinfo='text')
 
-fig <- fig %>% layout(title = "Location accuracy (m)",
-                      xaxis = xform,
+fig <- fig %>% layout(title = "Location accuracy (last 14 days)",
+                      xaxis = list(categoryorder = "trace"),
                       xaxis = list(title = ""),
                       yaxis = list(title = ""))
 
@@ -2606,123 +2626,92 @@ fig
 Average number of locations per day (last 14 days):
 
 ```{r, echo=F}
-#colnames(check_in_summary)
 
-xform <- list(categoryorder = "array",
-              categoryarray = c(check_in_summary$name))
+tmp <- check_in_summary[is.na(check_in_summary$locs_per_hour)==F,]
 
+fig <- plot_ly(tmp, x = ~name, y = ~locs_per_hour, type = 'bar',
 
-fig <- plot_ly(check_in_summary, x = ~name, y = ~locs_per_hour, type = 'bar',
+        marker = list(color = cols[as.factor(tmp$country)]),
+        text=paste0(tmp$name,"\n" ,tmp$country),
+        hoverinfo='text')
 
-        marker = list(color = cols[as.factor(check_in_summary$country)]),
-        text=check_in_summary$country,
-        hoverinfo='y')
-
-fig <- fig %>% layout(title = "Locations per hour",
-                      xaxis = xform,
+fig <- fig %>% layout(title = "Locations per hour (last 14 days)",
+                      xaxis = list(categoryorder = "trace"),
                       xaxis = list(title = ""),
-                      yaxis = list(title = "", hoverformat = '.1f'))
+                      yaxis = list(title = ""))
 
 
- 
+
 fig
 ```
 
 ### Temporal activity
 *Location activity over the last 14 days*
 
-The plot below shows a point each time we have a location at a given time.
+The plots below shows a point each time we have a location at a given time.
+
+#### Costa Rica
 
 ```{r, echo=F}
 library(plotly)
 yform <- list(categoryorder = "array",
               categoryarray = unique(tmp_cr$name))
 
-
-fig <- plot_ly(x = tmp_cr$timestamp, y = tmp_cr$name,type="scatter",
-               height=1000, text=tmp_cr$name, hoverinfo='text',
+tmp <- tmp_cr[tmp_cr$timestamp>start_t,]
+fig <- plot_ly(x = tmp$timestamp, y = tmp$name,type="scatter",
+               height=1000, text=paste(tmp$name, tmp$timestamp), hoverinfo='text',
                mode   = 'markers',
                marker = list(size = 5,
-                             color = 'rgba(50, 100, 255, .2)',
+                             color = "#fc8d59",
                              line = list(color = 'rgba(0, 0, 0, 0)',
                                          width = 0))) %>% 
-              layout(yaxis = yform)
+              layout(yaxis = yform,
+                     title = "Costa Rica")
 fig
 
 ```
 
-By the hour:
-
-```{r}
-dat$hour <- ymd_h(substr(dat$timestamp, 1,13))
-tmp <- dat %>% group_by(local_identifier, hour) %>% summarise(freq=n())
-
-# Subset to just last 14
-tmp <- tmp[tmp$hour>start_t,]
-
-
-
-col.cat <- turbo(length(unique(dat[,"local_identifier"])))
-
-
-cols <- col.cat[1:length(unique(dat$local_identifier))]
-
-
-
-fig <- plot_ly(tmp, x = ~hour, y = ~freq, name = tmp$local_identifier, type = 'scatter', mode = 'lines',split = ~local_identifier,color=~local_identifier, colors=cols) 
-
-fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
-                      xaxis = xform,
-                      xaxis = list(title = ""),
-                      yaxis = list(title = "Locations per hour"))
-
-fig
-
-#individual plots
-
-# i <- 33
-# for(i in 1:length(unique(dat$local_identifier)))
-# {
-#   tmp2 <- tmp[tmp$local_identifier==unique(dat$local_identifier)[i],]
-# 
-# fig <- plot_ly(tmp2, x = ~hour, y = ~freq, name = tmp2$local_identifier, type = 'scatter', mode = 'lines',split = ~local_identifier,color=~local_identifier, colors=cols,
-#                text=paste(tmp2$local_identifier, tmp2$hour), hoverinfo='text') 
-# 
-# fig <- fig %>%  layout(title = "Average hourly locations (last 14 days)",
-#                       xaxis = xform,
-#                       xaxis = list(title = ""),
-#                       yaxis = list(title = "Locations per hour"))
-# 
-# fig
-# }
-
-
-
-
-```
-
-
-
-
-*Location activity over the last 14 days*
-
-The plot below shows a point each time we have a location at a given time.
+#### Peru
 
 ```{r, echo=F}
-library(plotly)
+#library(plotly)
 yform <- list(categoryorder = "array",
-              categoryarray = unique(tmp_peru$name))
+              categoryarray = unique(tmp_cr$name))
 
-
-fig <- plot_ly(x = tmp_peru$timestamp, y = tmp_peru$name,type="scatter",
-               height=1000, text=tmp_peru$name, hoverinfo='text',
+tmp <- tmp_peru[tmp_peru$timestamp>start_t,]
+fig <- plot_ly(x = tmp$timestamp, y = tmp$name,type="scatter",
+               height=1000, text=paste(tmp$name, tmp$timestamp), hoverinfo='text',
                mode   = 'markers',
                marker = list(size = 5,
-                             color = 'rgba(50, 100, 255, .2)',
+                             color = "#0099ff",
                              line = list(color = 'rgba(0, 0, 0, 0)',
                                          width = 0))) %>% 
-              layout(yaxis = yform)
+              layout(yaxis = yform,
+                     title = "Costa Rica")
 fig
 
 ```
+
+
+#### Ecuador
+
+```{r, echo=F}
+#library(plotly)
+yform <- list(categoryorder = "array",
+              categoryarray = unique(tmp_cr$name))
+
+tmp <- tmp_ecuador[tmp_ecuador$timestamp>start_t,]
+fig <- plot_ly(x = tmp$timestamp, y = tmp$name,type="scatter",
+               height=1000, text=paste(tmp$name, tmp$timestamp), hoverinfo='text',
+               mode   = 'markers',
+               marker = list(size = 5,
+                             color = "#99d594",
+                             line = list(color = 'rgba(0, 0, 0, 0)',
+                                         width = 0))) %>% 
+              layout(yaxis = yform,
+                     title = "Costa Rica")
+fig
+
+```
+
 
