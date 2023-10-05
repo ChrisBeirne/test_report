@@ -11,11 +11,13 @@ costa-rica-2
 peru-2
 roost-and-nest-sites
 nighttime-roost-movement-summary
+costa-rica-3
+peru-3
 hardware-function-and-settings
 battery-status
 location-accuracy
 reporting-frequencies
 temporal-activity
-costa-rica-3
-peru-3
+costa-rica-4
+peru-4
 ecuador-2
