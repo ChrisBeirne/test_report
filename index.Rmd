@@ -520,7 +520,11 @@ ids <- tmp_peru_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -634,7 +638,11 @@ ids <- tmp_ecuador_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -771,7 +779,11 @@ ids <- tmp_cr_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -858,7 +870,11 @@ ids <- tmp_peru_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -950,7 +966,11 @@ ids <- tmp_ecuador_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -1442,7 +1462,7 @@ radius=100
         #write.csv(prop.rest.df,file = "rest_overview.csv",row.names=FALSE)
         
         
-                #map <- get_map(bbox(extent(data)),source="stamen",force=TRUE)
+                #map <- get_map(bbox(extent(data)),source="CartoDB.PositronNoLabels",force=TRUE)
         
         #data.df <- data.frame(coordinates(data),as.data.frame(moveStack(data)))
         #names(data.df)[1:2] <- c("location.long0","location.lat0")
@@ -1487,7 +1507,11 @@ clus_res$code <- paste0(toupper(substr(clus_res$local.identifier,1,3)),"_", subs
 
 m <- leaflet() %>%
   # Add a satellite image layer  
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -1990,7 +2014,7 @@ radius=100
         #write.csv(prop.rest.df,file = "rest_overview.csv",row.names=FALSE)
         
         
-                #map <- get_map(bbox(extent(data)),source="stamen",force=TRUE)
+                #map <- get_map(bbox(extent(data)),source="CartoDB.PositronNoLabels",force=TRUE)
         
         #data.df <- data.frame(coordinates(data),as.data.frame(moveStack(data)))
         #names(data.df)[1:2] <- c("location.long0","location.lat0")
@@ -2035,7 +2059,11 @@ clus_res$code <- paste0(toupper(substr(clus_res$local.identifier,1,3)),"_", subs
 
 m <- leaflet() %>%
   # Add a satellite image layer  
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -2215,7 +2243,11 @@ You can see the distribution of the nightime locations with the following map.  
 ```{r, eval=T, echo=F}
 m <- leaflet() %>%
   # Add a satellite image layer  
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -2399,7 +2431,11 @@ You can see the distribution of the nightime locations with the following map.  
 ```{r, eval=T, echo=F}
 m <- leaflet() %>%
   # Add a satellite image layer  
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -2725,7 +2761,11 @@ sf_ln <- st_transform(sf_ln, 4326)
 
 m <- leaflet() %>%
   # Add a satellite image layer
+<<<<<<< HEAD
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+=======
+  addProviderTiles(providers$CartoDB.PositronNoLabels.TonerLite, group="Simple") %>%
+>>>>>>> c7119a84799b23942499f1cdfe3d992228b8c491
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 m %>% 
