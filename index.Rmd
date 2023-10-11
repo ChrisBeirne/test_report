@@ -412,7 +412,7 @@ names <- sub('\\_.*', '', tmp_cr_shp$name)
 i <- 24
 m <- leaflet() %>%
   # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -520,7 +520,7 @@ ids <- tmp_peru_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -634,7 +634,7 @@ ids <- tmp_ecuador_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -771,7 +771,7 @@ ids <- tmp_cr_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -858,7 +858,7 @@ ids <- tmp_peru_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -950,7 +950,7 @@ ids <- tmp_ecuador_48_shp$name
 i <- 1
 m <- leaflet() %>%
   # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 
@@ -1487,7 +1487,7 @@ clus_res$code <- paste0(toupper(substr(clus_res$local.identifier,1,3)),"_", subs
 
 m <- leaflet() %>%
   # Add a satellite image layer  
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -2035,7 +2035,7 @@ clus_res$code <- paste0(toupper(substr(clus_res$local.identifier,1,3)),"_", subs
 
 m <- leaflet() %>%
   # Add a satellite image layer  
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -2215,7 +2215,7 @@ You can see the distribution of the nightime locations with the following map.  
 ```{r, eval=T, echo=F}
 m <- leaflet() %>%
   # Add a satellite image layer  
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -2399,7 +2399,7 @@ You can see the distribution of the nightime locations with the following map.  
 ```{r, eval=T, echo=F}
 m <- leaflet() %>%
   # Add a satellite image layer  
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
   m <- m %>%
@@ -2725,7 +2725,7 @@ sf_ln <- st_transform(sf_ln, 4326)
 
 m <- leaflet() %>%
   # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
 m %>% 
