@@ -5,7 +5,6 @@ on:
      - cron: "10 * * * *"  
 
 
-
 jobs:
   bookdown:
     name: Render-Book
@@ -55,8 +54,6 @@ jobs:
         run: Rscript -e "install.packages('geosphere')"
       - name: Install foreach
         run: Rscript -e "install.packages('foreach')"
-      - name: Install maptools
-        run: Rscript -e "install.packages('maptools')"
       - name: Install leaflet.extras
         run: Rscript -e "install.packages('leaflet.extras')"
       - name: Render Book
