@@ -34,6 +34,7 @@ library(purrr)
 library(readxl)
 library(geosphere)
 library(foreach)
+library(suncalc)
 #library(leaflet.opacity)
 library(leaflet.extras)
 
@@ -1006,12 +1007,6 @@ m
 
 # Cluster detection
 
-**IMPORTANT** RGEOS HAS BEEN RETIRED AND THIS CODE NO LONGER WORKS - I NEED TO UPDATE TO AN ALTERNATIOVE BUT I HAVENT FOUND ONE YET.
-Known issues:
-- NEED TO REPLACE `sunriset` check out functionality of `suncalc` package
-
-
-
 The following map shows all of the vulture clusters which have occurred in the previous 72 hours. This map should be checked daily to find potential feeding sites for visual confirmation. The field team should:
 
 - Prioritize recent clusters - we are more likely to find a carcass if a vulture was feeding recently
@@ -1029,7 +1024,7 @@ Key:
 - Hover over the circle for gps coordinates, cluster radius, number of points in the cluster and duration of the event
 
 ### Costa Rica
-```{r, eval=T, echo=F, message=F, warning=F, eval=F}
+```{r, eval=T, echo=F, message=F, warning=F, eval=T}
 # Code derived from
 # https://github.com/movestore/Daily-Rest-Sites
 #library('maptools')
@@ -1160,8 +1155,16 @@ radius=100
     data.ground.split <- move::split(data.ground)
     data.night <- foreach(data.groundi = data.ground.split) %do% {
       #print(namesIndiv(data.groundi))
-      sunupx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunrise", POSIXct.out=TRUE))$time + upX*60
-      sundownx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunset", POSIXct.out=TRUE))$time + downX*60
+            data.groundi_tmp <- data.frame(date = as.Date(substr(data.groundi$timestamp,1,10)),
+                                              lat = data.groundi$location.lat,
+                                              lon = data.groundi$location.long)
+                                              tmp<- getSunlightTimes(data = data.groundi_tmp,
+                                              keep = c("sunrise", "sunset"), tz = "UTC")
+                                          
+      
+      
+      sunupx <- tmp$sunrise + upX*60
+      sundownx <- tmp$sunset + downX*60
       data.groundi@data <- cbind(data.groundi@data,sunupx,sundownx)
 
       ix <- which(is.na(sunupx) | is.na(sundownx))
@@ -1561,7 +1564,7 @@ ids <- unique(sub_dat_df$name)
 
 The following is a list of all of the clusters in the above map, ordered by age (newest first):
 
-```{r, echo=F, warning=F, message=F, eval=F}
+```{r, echo=F, warning=F, message=F, eval=T}
  tmp <- clus_res[,c("local.identifier","clus_age","timestamp.first","timestamp.last" ,"rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
  tmp <- tmp[order(tmp$timestamp.first, decreasing=T),]
  tmp$date <- substr(tmp$timestamp.first,1,10)
@@ -1581,7 +1584,7 @@ The following is a list of all of the clusters in the above map, ordered by age 
 
 
 ### Peru
-```{r, eval=T, echo=F, message=F, warning=F, eval=F}
+```{r, eval=T, echo=F, message=F, warning=F, eval=T}
 # Code derived from
 # https://github.com/movestore/Daily-Rest-Sites
 #library('maptools')
@@ -1711,8 +1714,16 @@ radius=100
     data.ground.split <- move::split(data.ground)
     data.night <- foreach(data.groundi = data.ground.split) %do% {
       #print(namesIndiv(data.groundi))
-      sunupx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunrise", POSIXct.out=TRUE))$time + upX*60
-      sundownx <- data.frame(sunriset(coordinates(data.groundi), timestamps(data.groundi), direction="sunset", POSIXct.out=TRUE))$time + downX*60
+      data.groundi_tmp <- data.frame(date = as.Date(substr(data.groundi$timestamp,1,10)),
+                                              lat = data.groundi$location.lat,
+                                              lon = data.groundi$location.long)
+                                              tmp<- getSunlightTimes(data = data.groundi_tmp,
+                                              keep = c("sunrise", "sunset"), tz = "UTC")
+                                          
+      
+      
+      sunupx <- tmp$sunrise + upX*60
+      sundownx <- tmp$sunset + downX*60
       data.groundi@data <- cbind(data.groundi@data,sunupx,sundownx)
 
       ix <- which(is.na(sunupx) | is.na(sundownx))
@@ -2111,7 +2122,7 @@ ids <- unique(sub_dat_df$name)
 
 The following is a list of all of the clusters in the above map, ordered by age (newest first):
 
-```{r, echo=F, warning=F, message=F, eval=T, eval=F}
+```{r, echo=F, warning=F, message=F, eval=T, eval=T}
  tmp <- clus_res[,c("local.identifier","clus_age","timestamp.first","timestamp.last" ,"rest.mean.long", "rest.mean.lat", "rest.nposi", "rest.duration", "code")]
  tmp <- tmp[order(tmp$timestamp.first, decreasing=T),]
  tmp$date <- substr(tmp$timestamp.first,1,10)
