@@ -109,8 +109,8 @@ tmp3 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTi
 tmp3 <- tmp3[tmp3$location_lat>8,]
 
 #Carnivores
-#tmp4 <- getMovebankData(study=2957292408, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-#                       timestamp_start=start_mammal)
+tmp4 <- getMovebankData(study=2957292408, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_mammal)
 
 #Andean condor foundation
 tmp5 <- getMovebankData(study=2885579493, login=loginStored,  removeDuplicatedTimestamps=TRUE,
@@ -120,7 +120,7 @@ ec_names <- data.frame(code=row.names(tmp5@idData), name=(tmp5@idData$nick_name)
 
 mov_dat <- moveStack(tmp1, 
                      tmp3, 
-                     #tmp4, 
+                     tmp4, 
                      tmp5)
 
 # Remove the random zeros
@@ -214,6 +214,10 @@ microtis <- makeIcon(
   iconWidth = 38, iconHeight = 40,
   iconAnchorX = 22, iconAnchorY = 39)
 
+onca <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/jaguar.png",
+  iconWidth = 38, iconHeight = 36,
+  iconAnchorX = 22, iconAnchorY = 39)
 
 
 iconSet <- iconList(aura= aura,
@@ -222,7 +226,8 @@ iconSet <- iconList(aura= aura,
                     atratus = atra,
                     pardalis = pardalis,
                     bairdii = bairdii,
-                    microtis = microtis)
+                    microtis = microtis,
+                    onca=onca)
 
 dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
 
@@ -376,7 +381,7 @@ fig <- fig %>% add_trace(y = ~data$`Cathartes melambrotus`, name = 'GYH vulture'
 fig <- fig %>% add_trace(y = ~data$`Cathartes aura`, name = 'Turkey vulture')
 fig <- fig %>% add_trace(y = ~data$`Coragyps atratus`, name = 'Black vulture')
 fig <- fig %>% add_trace(y = ~data$`Tapirus bairdii`, name = 'Tapir')
-#fig <- fig %>% add_trace(y = ~data$`Atelocynus microtis`, name = 'Short-eared dog')
+fig <- fig %>% add_trace(y = ~data$`Panthera onca`, name = 'Jaguar')
 fig <- fig %>% layout(yaxis = list(title = 'Count'), barmode = 'stack')
 
 fig
@@ -1586,6 +1591,10 @@ The following is a list of all of the clusters in the above map, ordered by age 
 
 
 ### Peru
+
+*NOTE* Ignore clusters around the blue marker as that is a known supplementary feeding location at a lodge. 
+
+
 ```{r, eval=T, echo=F, message=F, warning=F, eval=T}
 # Code derived from
 # https://github.com/movestore/Daily-Rest-Sites
@@ -2080,6 +2089,7 @@ m <- leaflet() %>%
                                      "<br>code =", clus_res$code) 
                                      ,
                           fillOpacity = 0.3, opacity = 0.7, radius=4, color=clus_res$col)%>%
+       addMarkers(lat=-12.897336, lng=-71.397904) %>% 
       addScaleBar(position="topleft", 
                   options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
       addLayersControl(
