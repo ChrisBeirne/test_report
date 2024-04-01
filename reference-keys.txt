@@ -13,6 +13,8 @@ roost-and-nest-sites
 nighttime-roost-movement-summary
 costa-rica-3
 peru-3
+harness-release
+roost-location-summary
 hardware-function-and-settings
 battery-status
 location-accuracy
