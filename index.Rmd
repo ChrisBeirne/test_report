@@ -2827,6 +2827,116 @@ m
 
 ```
 
+# Harness release
+
+We currently have two individuals deployed. Santa and Cleopatra. I will subset to those data. 
+
+```{r, echo=F, message=F, warning=F}
+
+harness <- mov_dat[mov_dat$name %in% c("Santa", "Cleopatra"),]
+
+# Subset this data to when the harnesses were deployed.
+harness <- harness[harness$timestamp>ymd("2024-03-28"),]
+harness <- as.data.frame(harness)
+harness$icon <- sub(".*? ", "", harness$taxon_canonical_name)
+harness$name <- factor(harness$name)
+lfc <- do.call(st_sfc,
+              lapply(split(harness, harness$name),
+                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
+harness_shp <- st_sf(data.frame(name=levels(factor(harness[,"name"])), geom=lfc))
+
+harness_shp$colours <- c("orange", "purple")
+
+# Read in the geofence
+geof <- st_read("shapefiles/release_fence_v1.0.shp")
+#plot(harness_shp)
+
+
+ids <- harness_shp$name
+names <- harness_shp$name
+i <- 1
+
+
+```
+
+```{r}
+m <- leaflet() %>%
+  # Add a satellite image layer
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
+
+  for (i in seq(along=ids))
+    {
+      m <- m %>%
+        addPolylines(data = harness_shp[i,], color = harness_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
+        addCircleMarkers(lng=harness$location_long[harness$name==ids[i]],
+                         lat=harness$location_lat[harness$name==ids[i]], 
+                         popup=paste(harness$timestamp[harness$name==ids[i]]),
+                         fillOpacity = 0.3, opacity = 0.5, radius=2, color = harness_shp$colours[i], group = ids[i], stroke=F) %>%
+        addCircleMarkers(lng=last(harness$location_long[harness$name==ids[i]]),
+                         lat=last(harness$location_lat[harness$name==ids[i]]), 
+                         popup=paste(last(harness$timestamp[harness$name==ids[i]])),
+                         fillOpacity = 1, opacity = 1, radius=5, color = harness_shp$colours[i], group = ids[i], stroke=F) %>% 
+        # Add the last point
+        addMarkers(lng=last(harness$location_long[harness$name==ids[i]]),
+                         lat=last(harness$location_lat[harness$name==ids[i]]), 
+                         popup=paste(last(harness$local_identifier[harness$name==ids[i]]),
+                                     "<br>Time:",last(harness$timestamp[harness$name==ids[i]]),
+                                     "<br>Long:",last(harness$location_long[harness$name==ids[i]]),
+                                     "<br>Lat:",last(harness$location_lat[harness$name==ids[i]])),
+                   icon = iconSet[harness$icon[harness$name==ids[i]][1]], group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = harness_shp$colours[i], group = ids[i], stroke=F
+    }
+
+# Extract the 5pm, 7pm and 9pm locations
+
+night <- harness[substr(harness$timestamp,12,13) %in% c("17","19","21"), ]
+
+
+  m <- m %>%
+      # Add survey location
+      addMarkers(lng=cr_locs$longitude[2],
+                         lat=cr_locs$latitude[2], 
+                         popup=cr_locs$location_code[2]) %>%
+      addCircleMarkers(lng=night$location_long,
+                         lat=night$location_lat, 
+                         popup=night$timestamp, 
+                       col="red", opacity=1, radius=0.5) %>%
+    
+      addPolygons(data=geof, col=rgb(0.5,0,0.5,0.6), weight=1) %>% 
+    
+      #addLegend(position= "topright", colors=harness_shp$colours, 
+       #         labels=names ,opacity = 0.7, title = "Animals") %>%
+      addScaleBar(position="topleft", 
+                  options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
+      addLayersControl(
+        baseGroups = c("OS", "Simple", "Satellite"),
+        overlayGroups = ids,
+        options = layersControlOptions(collapsed = FALSE)
+      ) %>%
+  addFullscreenControl()
+  
+m 
+```
+
+### Roost location summary
+
+The distance from the last roost location to the geo-fence. 
+
+```{r}
+tmp <- night %>%
+ group_by(name) %>% 
+ summarise_all(last)
+
+#st_as_sf(coords)
+
+roost_sf <- st_as_sf(tmp, coords=c("location_long", "location_lat"), crs=4327)
+geof <- st_transform(geof, crs(roost_sf))
+tmp$dist_km <- as.numeric(round(st_distance(roost_sf, geof)/1000,1))
+
+kbl(tmp[, c("name", "dist_km")])
+```
+
 
 # Hardware function and settings
 
