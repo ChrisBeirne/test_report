@@ -2925,8 +2925,8 @@ The distance from the last roost location to the geo-fence.
 
 ```{r}
 tmp <- night %>%
- group_by(name) %>% 
- summarise_all(last)
+ group_by(name) %>%
+  filter(row_number()==n())
 
 #st_as_sf(coords)
 
