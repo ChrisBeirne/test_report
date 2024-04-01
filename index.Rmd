@@ -2831,7 +2831,7 @@ m
 
 We currently have two individuals deployed. Santa and Cleopatra. I will subset to those data. 
 
-```{r, echo=F, message=F, warning=F}
+```{r, echo=F, message=F, warning=F, include=F}
 
 harness <- mov_dat[mov_dat$name %in% c("Santa", "Cleopatra"),]
 
@@ -2859,7 +2859,7 @@ i <- 1
 
 ```
 
-```{r}
+```{r, message=F, warning=F}
 m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
@@ -2923,7 +2923,7 @@ m
 
 The distance from the last roost location to the geo-fence. 
 
-```{r}
+```{r, message=F, warning=F}
 tmp <- night %>%
  group_by(name) %>%
   filter(row_number()==n())
