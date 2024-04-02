@@ -2947,51 +2947,48 @@ tmp2$days_active[2] <-  length(unique(substr(night$timestamp[night$name=="Santa"
 
 # Checkin counter
 night$day <- substr(night$timestamp,1,10)
-nine_pms <- night[substr(night$timestamp,12,13)==21,]
+nine_pms <- night[substr(night$timestamp,12,13)==21 & night$timestamp > ymd_hms("2024-04-03 12:00:00", tz="America/Costa_Rica"),]
 
-tmp3 <- nine_pms %>%
- group_by(name, day) %>%
-  filter(row_number()==1)
-
-tmp4 <- st_as_sf(tmp3, coords=c("location_long", "location_lat"), crs=4326)
-tmp3$distance_to_fence <- round(as.numeric(st_distance(tmp4, geof)/1000),1)
-
-tmp3 <- tmp3[,c("name", "day", "distance_to_fence")]
-
-tmp3$GPS_range <-tmp3$distance_to_fence<=8
-tmp3$GPS_check <- NA
-j <- 2
-i <- 1
-for(i in 1:length(unique(tmp3$name)))
+if(nrow(nine_pms)>0)
 {
-  tmp4 <- tmp3[tmp3$name==unique(tmp3$name)[i],]
-  if(tmp4$distance_to_fence[1]<8){ tmp4$GPS_check[1] <- 1}
-  for(j in 2:nrow(tmp4))
-  {
-    if(tmp4$distance_to_fence[j-1]>8 & tmp4$GPS_check[j-1]==1)
-      {tmp4$GPS_check[j] <- 0} else{tmp4$GPS_check[j] <- 1}
-  }
-  # Update the original dataframe
-  tmp3[tmp3$name==unique(tmp3$name)[i],]$GPS_check <- tmp4$GPS_check
-}
 
-tmp5 <- tmp3 %>% group_by(name) %>% summarise(GPS_check_count=sum(GPS_check)) %>% left_join(tmp2)
+  tmp3 <- nine_pms %>%
+    group_by(name, day) %>%
+    filter(row_number()==1)
 
-tmp5 <- tmp5[, c("name", "dist_km", "days_active", "GPS_check_count")]
-tmp5$checks_remaining <- 30-tmp5$GPS_check_count
+      tmp4 <- st_as_sf(tmp3, coords=c("location_long", "location_lat"), crs=4326)
+      tmp3$distance_to_fence <- round(as.numeric(st_distance(tmp4, geof)/1000),1)
+      
+      tmp3 <- tmp3[,c("name", "day", "distance_to_fence")]
+      
+      tmp3$GPS_range <-tmp3$distance_to_fence<=8
+      tmp3$GPS_check <- NA
+      j <- 2
+      i <- 1
+      for(i in 1:length(unique(tmp3$name)))
+      {
+        tmp4 <- tmp3[tmp3$name==unique(tmp3$name)[i],]
+        if(tmp4$distance_to_fence[1]<8){ tmp4$GPS_check[1] <- 1}
+        for(j in 2:nrow(tmp4))
+        {
+          if(tmp4$distance_to_fence[j-1]>8 & tmp4$GPS_check[j-1]==1)
+            {tmp4$GPS_check[j] <- 0} else{tmp4$GPS_check[j] <- 1}
+        }
+        # Update the original dataframe
+        tmp3[tmp3$name==unique(tmp3$name)[i],]$GPS_check <- tmp4$GPS_check
+      }
+      
+      tmp5 <- tmp3 %>% group_by(name) %>% summarise(GPS_check_count=sum(GPS_check)) %>% left_join(tmp2)
+      
+      tmp5 <- tmp5[, c("name", "dist_km", "days_active", "GPS_check_count")]
+      tmp5$checks_remaining <- 30-tmp5$GPS_check_count
+} else{tmp5 <- tmp2}
+
 
 kbl(tmp5)%>%
   kable_styling(bootstrap_options = c("striped", "hover"))
 
 ```
-
-Show the full table just to check the counter is working!
-
-```{r}
-kbl(tmp3)%>%
-  kable_styling(bootstrap_options = c("striped", "hover"))
-```
-
 
 
 # Hardware function and settings
