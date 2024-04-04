@@ -2963,19 +2963,24 @@ if(nrow(nine_pms)>0)
       
       tmp3$GPS_range <-tmp3$distance_to_fence<=8
       tmp3$GPS_check <- NA
-      j <- 2
-      i <- 1
+
+      
+      
       for(i in 1:length(unique(tmp3$name)))
       {
         tmp4 <- tmp3[tmp3$name==unique(tmp3$name)[i],]
-        if(tmp4$distance_to_fence[1]<8){ tmp4$GPS_check[1] <- 1}
-        for(j in 2:nrow(tmp4))
-        {
-          if(tmp4$distance_to_fence[j-1]>8 & tmp4$GPS_check[j-1]==1)
-            {tmp4$GPS_check[j] <- 0} else{tmp4$GPS_check[j] <- 1}
+        tmp4$GPS_check[1] <- 1
+        if(nrow(tmp4)>1)
+        {  
+          for(j in 2:nrow(tmp4))
+          {
+            if(tmp4$distance_to_fence[j-1]>8 & tmp4$GPS_check[j-1]==1)
+              {tmp4$GPS_check[j] <- 0} else{tmp4$GPS_check[j] <- 1}
+          }
         }
         # Update the original dataframe
         tmp3[tmp3$name==unique(tmp3$name)[i],]$GPS_check <- tmp4$GPS_check
+        
       }
       
       tmp5 <- tmp3 %>% group_by(name) %>% summarise(GPS_check_count=sum(GPS_check)) %>% left_join(tmp2)
