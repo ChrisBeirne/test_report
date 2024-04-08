@@ -219,6 +219,11 @@ onca <- makeIcon(
   iconWidth = 38, iconHeight = 36,
   iconAnchorX = 22, iconAnchorY = 39)
 
+concolor <- makeIcon(
+  iconUrl = "https://raw.githubusercontent.com/ChrisBeirne/Osa-Conservation-Movement-Ecology-Daily-Report/main/icons/puma.png",
+  iconWidth = 38, iconHeight = 36,
+  iconAnchorX = 22, iconAnchorY = 39)
+
 
 iconSet <- iconList(aura= aura,
                     papa =papa,
@@ -227,7 +232,8 @@ iconSet <- iconList(aura= aura,
                     pardalis = pardalis,
                     bairdii = bairdii,
                     microtis = microtis,
-                    onca=onca)
+                    onca=onca,
+                    concolor=concolor)
 
 dat$icon <- sub(".*? ", "", dat$taxon_canonical_name)
 
@@ -382,6 +388,7 @@ fig <- fig %>% add_trace(y = ~data$`Cathartes aura`, name = 'Turkey vulture')
 fig <- fig %>% add_trace(y = ~data$`Coragyps atratus`, name = 'Black vulture')
 fig <- fig %>% add_trace(y = ~data$`Tapirus bairdii`, name = 'Tapir')
 fig <- fig %>% add_trace(y = ~data$`Panthera onca`, name = 'Jaguar')
+fig <- fig %>% add_trace(y = ~data$`Puma concolor`, name = 'Puma')
 fig <- fig %>% layout(yaxis = list(title = 'Count'), barmode = 'stack')
 
 fig
