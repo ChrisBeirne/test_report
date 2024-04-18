@@ -2840,14 +2840,31 @@ m
 We currently have two individuals deployed. Santa and Cleopatra. I will subset to those data. 
 
 ```{r, echo=F, message=F, warning=F, include=F}
+# Download all data from the release date of the birds involved
 
-harness <- mov_dat[mov_dat$name %in% c("Cleopatra"),]
+start_t <- ymd_hms("2024-03-28 00:00:00")
+
+# Vultures
+tmp1 <- getMovebankData(study=1573471517,animalName="Cleopatra", login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_t)
+
+harness <- tmp1
+
+# Convert to CR time
+harness$timestamp <- with_tz(timestamps(harness), tz="America/Costa_Rica")
 
 # Subset this data to when the harnesses were deployed.
 harness <- harness[harness$timestamp>ymd("2024-03-28"),]
 harness <- as.data.frame(harness)
+harness$name <- harness$local_identifier
 harness$icon <- sub(".*? ", "", harness$taxon_canonical_name)
 harness$name <- factor(harness$name)
+
+
+
+
+
+
 lfc <- do.call(st_sfc,
               lapply(split(harness, harness$name),
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
