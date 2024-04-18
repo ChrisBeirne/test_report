@@ -2841,7 +2841,7 @@ We currently have two individuals deployed. Santa and Cleopatra. I will subset t
 
 ```{r, echo=F, message=F, warning=F, include=F}
 
-harness <- mov_dat[mov_dat$name %in% c("Santa", "Cleopatra"),]
+harness <- mov_dat[mov_dat$name %in% c("Cleopatra"),]
 
 # Subset this data to when the harnesses were deployed.
 harness <- harness[harness$timestamp>ymd("2024-03-28"),]
@@ -2853,7 +2853,7 @@ lfc <- do.call(st_sfc,
                      function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
 harness_shp <- st_sf(data.frame(name=levels(factor(harness[,"name"])), geom=lfc))
 
-harness_shp$colours <- c("orange", "purple")
+harness_shp$colours <- c("purple")
 
 # Read in the geofence
 geof <- st_read("shapefiles/release_fence_v1.0.shp")
@@ -2950,7 +2950,7 @@ tmp2 <- tmp[, c("name", "dist_km")]
 
 tmp2$days_active <- NA
 tmp2$days_active[1] <-  length(unique(substr(night$timestamp[night$name=="Cleopatra"],1,10)))
-tmp2$days_active[2] <-  length(unique(substr(night$timestamp[night$name=="Santa"],1,10)))
+#tmp2$days_active[2] <-  #length(unique(substr(night$timestamp[night$name=="Santa"],1,10)))
 
 # Checkin counter
 night$day <- substr(night$timestamp,1,10)
