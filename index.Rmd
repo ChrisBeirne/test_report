@@ -249,6 +249,24 @@ pe_locs<- data.frame(location_code=c("VT_MANU01"),
            longitude=c( -71.403264) )
 
 
+# Import the oc trail system
+trails<- st_read("shapefiles/CO_trails_system_2016.shp")
+trails <- st_transform(trails, 4326)
+trails2<- st_read("shapefiles/trails.shp")
+#trails <- st_transform(trails, 4326)
+trails3<- st_read("shapefiles/Nance_trail.shp")
+
+m <- leaflet() %>%
+  # Add a satellite image layer
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>% 
+# Add shapefile for trails
+addPolylines(data = trails, color = "black", weight=2,opacity=1) %>% 
+addPolylines(data = trails2, color = "black", weight=2,opacity=1) #%>% 
+#addPolylines(data = trails3, color = "red", weight=2,opacity=1) 
+  
+m
 
 ```
 
@@ -380,6 +398,7 @@ fig %>% add_pie(data = dplyr::count(check_in_summary, taxon_canonical_name), lab
 ```{r, echo=F}
 
 data <- t(as.data.frame.matrix(table(check_in_summary$taxon_canonical_name, check_in_summary$country)))
+
 data <- as.data.frame(data)
 data$country <- row.names(data)
 fig <- plot_ly(data, x = ~country, y = ~data$`Sarcoramphus papa`, type = 'bar', name = 'King vulture')
@@ -387,7 +406,7 @@ fig <- fig %>% add_trace(y = ~data$`Cathartes melambrotus`, name = 'GYH vulture'
 fig <- fig %>% add_trace(y = ~data$`Cathartes aura`, name = 'Turkey vulture')
 fig <- fig %>% add_trace(y = ~data$`Coragyps atratus`, name = 'Black vulture')
 fig <- fig %>% add_trace(y = ~data$`Tapirus bairdii`, name = 'Tapir')
-fig <- fig %>% add_trace(y = ~data$`Panthera onca`, name = 'Jaguar')
+#fig <- fig %>% add_trace(y = ~data$`Panthera onca`, name = 'Jaguar')
 fig <- fig %>% add_trace(y = ~data$`Puma concolor`, name = 'Puma')
 fig <- fig %>% layout(yaxis = list(title = 'Count'), barmode = 'stack')
 
@@ -428,7 +447,11 @@ m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>% 
+# Add shapefile for trails
+# Add shapefile for trails
+addPolylines(data = trails, color = "black", weight=2,opacity=1) %>% 
+addPolylines(data = trails2, color = "black", weight=2,opacity=1)
 
   for (i in seq(along=ids))
     {
@@ -790,7 +813,10 @@ m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>% 
+  # Add shapefile for trails
+  addPolylines(data = trails, color = "black", weight=2,opacity=1) %>% 
+  addPolylines(data = trails2, color = "black", weight=2,opacity=1)   
 
   for (i in seq(along=ids))
     {
@@ -836,6 +862,69 @@ m <- leaflet() %>%
   
 m 
 ```
+
+And a plot for just the cats (last 2 weeks):
+
+```{r, echo=F}
+
+# New map
+ids <- tmp_cr_48_shp$name[tmp_cr_48_shp$taxon_canonical_name %in% c("Puma concolor", "Panthera onca", "Leopardus pardalis")]
+i <- 1
+m <- leaflet() %>%
+  # Add a satellite image layer
+  addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>% 
+  # Add shapefile for trails
+  addPolylines(data = trails, color = "black", weight=2,opacity=1) %>% 
+  addPolylines(data = trails2, color = "black", weight=2,opacity=1)   
+i <-1
+  for (i in seq(along=ids))
+    {
+      m <- m %>%
+        addPolylines(data = tmp_cr_48_shp[tmp_cr_48_shp$name==ids[i],], color = tmp_cr_48_shp$colours[tmp_cr_48_shp$name==ids[i]], group = ids[i], weight=2,opacity=0.8)         %>%
+        
+        # All points
+        addCircleMarkers(lng=tmp_cr_48$location_long[tmp_cr_48$name==ids[i]],
+                         lat=tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]], 
+                         
+                         popup=paste(tmp_cr_48$local_identifier[tmp_cr_48$name==ids[i]],
+                                     "<br>Time:",tmp_cr_48$timestamp[tmp_cr_48$name==ids[i]],
+                                     "<br>Long:",tmp_cr_48$location_long[tmp_cr_48$name==ids[i]],
+                                     "<br>Lat:",tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]]),
+                         
+                         fillOpacity = 0.3, opacity = 0.5, radius=3, color = tmp_cr_48_shp$colours[tmp_cr_48_shp$name==ids[i]], group = ids[i], stroke=F) %>%
+        
+        # The last point
+        addMarkers(lng=last(tmp_cr_48$location_long[tmp_cr_48$name==ids[i]]),
+                         lat=last(tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]]), 
+                         popup=paste(last(tmp_cr_48$local_identifier[tmp_cr_48$name==ids[i]]),
+                                     "<br>Time:",last(tmp_cr_48$timestamp[tmp_cr_48$name==ids[i]]),
+                                     "<br>Long:",last(tmp_cr_48$location_long[tmp_cr_48$name==ids[i]]),
+                                     "<br>Lat:",last(tmp_cr_48$location_lat[tmp_cr_48$name==ids[i]])),
+                   icon = iconSet[tmp_cr_48$icon[tmp_cr_48$name==ids[i]][1]], group=ids[i]) #, fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_48_shp$colours[i], group = ids[i], stroke=F
+    }
+
+  m <- m %>%
+      # Add survey location
+      addMarkers(lng=cr_locs$longitude,
+                         lat=cr_locs$latitude, 
+                         popup=cr_locs$location_code) %>% 
+      #addLegend(position= "topright", colors=tmp_cr_48_shp$colours, 
+      #          labels=ids ,opacity = 0.7, title = "Animals") %>%
+      addScaleBar(position="topleft", 
+                  options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
+      addLayersControl(
+        baseGroups = c("Simple", "OS", "Satellite"),
+        overlayGroups = ids,
+        options = layersControlOptions(collapsed = FALSE)
+      ) %>%
+  addFullscreenControl()
+  
+m 
+```
+
+
 
 
 ### Peru
@@ -2835,11 +2924,14 @@ m
 
 ```
 
+
+```{r, eval=F,echo=F, message=F, warning=F, include=F}
+
 # Harness release
 
-We currently have two individuals deployed. Santa and Cleopatra. I will subset to those data. 
+#We currently have two individuals deployed. Santa and Cleopatra. I #will subset to those data. 
 
-```{r, echo=F, message=F, warning=F, include=F}
+
 # Download all data from the release date of the birds involved
 
 start_t <- ymd_hms("2024-03-28 00:00:00")
@@ -2861,7 +2953,7 @@ harness$icon <- sub(".*? ", "", harness$taxon_canonical_name)
 harness$name <- factor(harness$name)
 
 
-
+#plot(harness$timestamp, harness$eobs_battery_voltage)
 
 
 
@@ -2881,10 +2973,10 @@ ids <- harness_shp$name
 names <- harness_shp$name
 i <- 1
 
+##########################
+# ``
+###########################
 
-```
-
-```{r, message=F, warning=F}
 m <- leaflet() %>%
   # Add a satellite image layer
   addProviderTiles(providers$CartoDB.PositronNoLabels, group="Simple") %>%
@@ -2942,13 +3034,14 @@ night <- harness[substr(harness$timestamp,12,13) %in% c("17","19","21"), ]
   addFullscreenControl()
   
 m 
-```
-
+#```
+#
 ### Roost location summary
+#
+#The distance from the last roost location to the geo-fence. #
+#
+#```{r, message=F, warning=F}
 
-The distance from the last roost location to the geo-fence. 
-
-```{r, message=F, warning=F}
 tmp <- night %>%
  group_by(name) %>%
   filter(row_number()==n())
@@ -3016,6 +3109,8 @@ if(nrow(nine_pms)>0)
 
 kbl(tmp5)%>%
   kable_styling(bootstrap_options = c("striped", "hover"))
+
+
 
 ```
 
