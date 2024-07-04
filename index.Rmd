@@ -380,9 +380,7 @@ tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, unit
 tmp2 <- tmp2[order(tmp2$days_since_check_in),]
 #row.names(tmp2) <- 1:nrow(tmp2)
 
-
-
-tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
+tmp2[, c("name","taxon_canonical_name",  "timestamp_end", "days_since_check_in")] %>%
   kbl() %>%
   kable_styling() %>%
   kableExtra::scroll_box(width = "100%")
