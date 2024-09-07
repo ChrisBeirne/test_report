@@ -250,12 +250,13 @@ pe_locs<- data.frame(location_code=c("VT_MANU01"),
 
 
 
-trails <- st_read("shapefiles/OC_trails2.shp")
+trails <- st_read("shapefiles/trails_osa.shp")
 
 trails_ship <- st_read("shapefiles/shipetiari_trails.shp")
 # Remove z data
 trails_ship <- st_zm(trails_ship, drop = TRUE, what = "ZM")
-
+trails <- st_zm(trails, drop = TRUE, what = "ZM")
+trails<- st_transform(trails, 4326)
 polini_trails <- st_read("shapefiles/Polini linderos.shp")
 polini_shp <- st_read("shapefiles/Polini.shp")
 polini_trails <- st_transform(polini_trails, 4326)
