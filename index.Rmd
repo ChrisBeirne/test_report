@@ -1040,7 +1040,7 @@ m <- leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>% 
   # Add shapefile for trails
-  addPolylines(data = trails, color = "black", weight=2,opacity=1)   
+  addPolylines(data = trails_ship, color = "black", weight=2,opacity=1)   
 
   for (i in seq(along=ids))
     {
@@ -1099,7 +1099,7 @@ m <- leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") %>% 
   # Add shapefile for trails
-  addPolylines(data = trails, color = "black", weight=2,opacity=1)   
+  addPolylines(data = trails_ship, color = "black", weight=2,opacity=1)   
 i <-1
   for (i in seq(along=ids))
     {
