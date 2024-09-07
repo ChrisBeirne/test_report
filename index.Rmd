@@ -1080,8 +1080,7 @@ m <- leaflet() %>%
         baseGroups = c("Simple", "OS", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) %>%
-  addFullspeeenControl()
+      )
   
 m 
 ```
@@ -1138,8 +1137,8 @@ i <-1
         baseGroups = c("Simple", "OS", "Satellite"),
         overlayGroups = ids,
         options = layersControlOptions(collapsed = FALSE)
-      ) %>%
-  addFullspeeenControl()
+      ) #%>%
+ # addFullspeeenControl()
   
 m 
 ```
