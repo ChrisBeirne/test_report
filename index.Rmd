@@ -1027,7 +1027,7 @@ tmp_pe_48_shp$colours <- col.cat[tmp_pe_48_shp$name]
 
 ```
 
-We currently have `r length(unique(tmp_pe$name))` devices actively transmitting data in Peru:
+We currently have `r length(unique(tmp_pe_48$name))` devices actively transmitting data in Peru:
 
 ```{r, echo=F}
 # New map
