@@ -248,7 +248,7 @@ pe_locs<- data.frame(location_code=c("VT_MANU01"),
            latitude=c(-12.887758)	,
            longitude=c( -71.403264) )
 
-
+ 
 
 trails <- st_read("shapefiles/trails_osa.shp")
 
