@@ -781,6 +781,8 @@ fig
 
 # Active trapping and monioring stations 
 
+### Piro
+
 ```{r}
 
 sheet_data <- as.data.frame(sheet02)
@@ -797,27 +799,18 @@ sheet_data$colours <- col_cat_sheet[sheet_data[,category_sheet]]
 # Se considero Activo para saber donde estan los lugares actuales de las camaras
 # e Inactivo para saber si ya existe el sitio en la bbdd y no crear una locacion nueva
 
-act <- subset(sheet_data, Condition == "Activo" )
+act <- subset(sheet_data, Condition == "Activo" & Latitude < 8.7 )
 
 #no_act <- subset(sheet_data, Condition == "No activo")
+points_sf <- st_as_sf(act, coords=c("Longitude", "Latitude"), crs=4326)
 
+bbox <- st_bbox(points_sf) %>% 
+  as.vector()
 
-
-
-traps_map <- leaflet() |>  
+traps_map <- leaflet() |> 
+  fitBounds(bbox[1], bbox[2], bbox[3], bbox[4]) |> 
   addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>    
-  addCircleMarkers(data = act,
-                   lng = act$Longitude, 
-                   lat = act$Latitude,
-                   color = act$colours,
-                   weight = 3,
-                   opacity = 1,
-                   radius=2,
-                   fill = T,
-                   fillOpacity = 1,
-                   popup = paste(act$Location, act$Longitude, act$Latitude),
-                   group = "Activos") |> 
-  # addCircleMarkers(data = no_act,
+    # addCircleMarkers(data = no_act,
   #                  lng = no_act$Longitude, 
   #                  lat = no_act$Latitude,
   #                  color = no_act$colours,
@@ -827,7 +820,7 @@ traps_map <- leaflet() |>
   #                  fillOpacity = 0.5,
   #                  popup = paste(no_act$Location, no_act$Longitude, no_act$Latitude),
   #                  group = "No activos") |>
-  addLegend(position = "topleft", 
+  addLegend(position = "topright", 
             colors = col_cat_sheet,  
             labels = levels(sheet_data[,category_sheet]),
             title = category_sheet,
@@ -849,14 +842,105 @@ traps_map <- leaflet() |>
               opacity = 1, 
               fill = F,
               group = "Campus") |> 
+  addCircleMarkers(data = act,
+                   lng = act$Longitude, 
+                   lat = act$Latitude,
+                   color = act$colours,
+                   weight = 3,
+                   opacity = 1,
+                   radius=2.5,
+                   fill = T,
+                   fillOpacity = 1,
+                   popup = paste(act$Location, act$Longitude, act$Latitude),
+                   group = "Activos") |>
   addLayersControl(
     overlayGroups = c("Activos"),
     options = layersControlOptions(collapsed = FALSE)) 
 
 traps_map
 
+```
+
+### Lomas
+
+```{r}
+
+sheet_data <- as.data.frame(sheet02)
+
+# Script mapa
+category_sheet <- "Type_trap"
+
+sheet_data[,category_sheet] <- factor(sheet_data[,category_sheet])
+
+col_cat_sheet <- turbo(length(levels(sheet_data[,category_sheet])))
+
+sheet_data$colours <- col_cat_sheet[sheet_data[,category_sheet]]
+
+# Se considero Activo para saber donde estan los lugares actuales de las camaras
+# e Inactivo para saber si ya existe el sitio en la bbdd y no crear una locacion nueva
+
+act <- subset(sheet_data, Condition == "Activo" & Latitude > 8.7 )
+
+#no_act <- subset(sheet_data, Condition == "No activo")
+points_sf <- st_as_sf(act, coords=c("Longitude", "Latitude"), crs=4326)
+
+bbox <- st_bbox(points_sf) %>% 
+  as.vector()
+
+traps_map <- leaflet() |> 
+  fitBounds(bbox[1], bbox[2], bbox[3], bbox[4]) |> 
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>    
+    # addCircleMarkers(data = no_act,
+  #                  lng = no_act$Longitude, 
+  #                  lat = no_act$Latitude,
+  #                  color = no_act$colours,
+  #                  weight = 3,
+  #                  opacity = 1,
+  #                  fill = T,
+  #                  fillOpacity = 0.5,
+  #                  popup = paste(no_act$Location, no_act$Longitude, no_act$Latitude),
+  #                  group = "No activos") |>
+  addLegend(position = "topright", 
+            colors = col_cat_sheet,  
+            labels = levels(sheet_data[,category_sheet]),
+            title = category_sheet,
+            labFormat = labelFormat(prefix = "$"),
+            opacity = 1) |>
+  addPolylines(data = trails,
+               color = "white", 
+               weight = 1, 
+               opacity = 1, 
+               group = "Trails") |> 
+  addPolylines(data = osa_roads,
+               color = "brown", 
+               weight = 2, 
+               opacity = 0.5, 
+               group = "Road") |> 
+  addPolygons(data = osa_campus,
+              color = "lightpink", 
+              weight = 3, 
+              opacity = 1, 
+              fill = F,
+              group = "Campus") |> 
+  addCircleMarkers(data = act,
+                   lng = act$Longitude, 
+                   lat = act$Latitude,
+                   color = act$colours,
+                   weight = 3,
+                   opacity = 1,
+                   radius=2.5,
+                   fill = T,
+                   fillOpacity = 1,
+                   popup = paste(act$Location, act$Longitude, act$Latitude),
+                   group = "Activos") |>
+  addLayersControl(
+    overlayGroups = c("Activos"),
+    options = layersControlOptions(collapsed = FALSE)) 
+
+traps_map
 
 ```
+
 
 
 # Last locations  {.tabset}
