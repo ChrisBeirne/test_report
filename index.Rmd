@@ -37,7 +37,6 @@ library(foreach)
 library(suncalc)
 #library(leaflet.opacity)
 library(leaflet.extras)
-library(googlesheets4)
 
 #drive_auth()
 googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTHENTICATION_CREDENTIALS"))

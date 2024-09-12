@@ -46,8 +46,6 @@ jobs:
         run: Rscript -e "install.packages('raster', type='mac.binary')"
       - name: Install googledrive
         run: Rscript -e "install.packages('googledrive')"
-- name: Install googlesheets4
-        run: Rscript -e "install.packages('googlesheets4')"
       - name: Install purrr
         run: Rscript -e "install.packages('purrr')"
       - name: Install readxl
