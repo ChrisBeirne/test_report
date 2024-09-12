@@ -37,19 +37,21 @@ library(foreach)
 library(suncalc)
 #library(leaflet.opacity)
 library(leaflet.extras)
+library(googlesheets4)
 
-options(googledrive_quiet = TRUE)
+#drive_auth()
+googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTHENTICATION_CREDENTIALS"))
+data_path <- "data"
+dir.create(data_path) 
 #test2
 # For when the trapping effort file is sorted
 # googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTHENTICATION_CREDENTIALS"))
 # 
 # ## Find Google Drive folder 'Centre Circle Data & Info'
-# data_folder <- drive_ls(path = "08 Databases + Analysis")
-# data_path <- "data" 
-# dir.create(data_path) 
-# drive_download(as_id("14hLi94W4WbDn6jdXahJMnxllOgLpZh-PpIBOWqt9jlc"),
-#                path="data/2_vulture_trap_deployments.xlsx")
-#capture_dat <- read_excel("data/2_vulture_trap_deployments.xlsx")
+drive_download(as_id("1cpK5hRs7Nl71a-Eks813eTL3sx_lVCiSsL7w2MDg0OU"),
+                path="data/trap_deployments.xlsx")
+sheet02 <- read_excel("data/trap_deployments.xlsx",
+                      sheet="Location")
 
 
 
@@ -263,6 +265,17 @@ polini_trails <- st_transform(polini_trails, 4326)
 polini_shp<- st_transform(polini_shp, 4326)
 polini_trails<- st_zm(polini_trails, drop = TRUE, what = "ZM")
 polini_shp<- st_zm(polini_shp, drop = TRUE, what = "ZM")
+
+
+# Other shapes
+
+shp02 <- "shapefiles/roads_osa.shp"
+
+osa_roads <- st_read(shp02)
+
+shp03 <- "shapefiles/campus_area.shp"
+
+osa_campus <- st_read(shp03)
 
 # plot(polini_shp)
 # m <- leaflet() %>%
@@ -766,6 +779,84 @@ fig
 
 ```
 
+# Active trapping and monioring stations 
+
+```{r}
+
+sheet_data <- as.data.frame(sheet02)
+
+# Script mapa
+category_sheet <- "Type_trap"
+
+sheet_data[,category_sheet] <- factor(sheet_data[,category_sheet])
+
+col_cat_sheet <- turbo(length(levels(sheet_data[,category_sheet])))
+
+sheet_data$colours <- col_cat_sheet[sheet_data[,category_sheet]]
+
+# Se considero Activo para saber donde estan los lugares actuales de las camaras
+# e Inactivo para saber si ya existe el sitio en la bbdd y no crear una locacion nueva
+
+act <- subset(sheet_data, Condition == "Activo" )
+
+#no_act <- subset(sheet_data, Condition == "No activo")
+
+
+
+
+traps_map <- leaflet() |>  
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>    
+  addCircleMarkers(data = act,
+                   lng = act$Longitude, 
+                   lat = act$Latitude,
+                   color = act$colours,
+                   weight = 3,
+                   opacity = 1,
+                   radius=2,
+                   fill = T,
+                   fillOpacity = 1,
+                   popup = paste(act$Location, act$Longitude, act$Latitude),
+                   group = "Activos") |> 
+  # addCircleMarkers(data = no_act,
+  #                  lng = no_act$Longitude, 
+  #                  lat = no_act$Latitude,
+  #                  color = no_act$colours,
+  #                  weight = 3,
+  #                  opacity = 1,
+  #                  fill = T,
+  #                  fillOpacity = 0.5,
+  #                  popup = paste(no_act$Location, no_act$Longitude, no_act$Latitude),
+  #                  group = "No activos") |>
+  addLegend(position = "topleft", 
+            colors = col_cat_sheet,  
+            labels = levels(sheet_data[,category_sheet]),
+            title = category_sheet,
+            labFormat = labelFormat(prefix = "$"),
+            opacity = 1) |>
+  addPolylines(data = trails,
+               color = "white", 
+               weight = 1, 
+               opacity = 1, 
+               group = "Trails") |> 
+  addPolylines(data = osa_roads,
+               color = "brown", 
+               weight = 2, 
+               opacity = 0.5, 
+               group = "Road") |> 
+  addPolygons(data = osa_campus,
+              color = "lightpink", 
+              weight = 3, 
+              opacity = 1, 
+              fill = F,
+              group = "Campus") |> 
+  addLayersControl(
+    overlayGroups = c("Activos"),
+    options = layersControlOptions(collapsed = FALSE)) 
+
+traps_map
+
+
+```
 
 
 # Last locations  {.tabset}
