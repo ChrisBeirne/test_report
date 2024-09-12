@@ -2,6 +2,9 @@ device-status
 costa-rica
 peru
 ecuador
+active-trapping-and-monioring-stations
+piro
+lomas
 last-locations
 costa-rica-1
 peru-1
