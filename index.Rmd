@@ -1303,7 +1303,6 @@ i <-1
 
   m <- m %>%
       # Add survey location
-      addPolylines(data=polini_shp, fill="blue", stroke=F) %>% 
       #addLegend(position= "topright", colors=tmp_pe_48_shp$colours, 
       #          labels=ids ,opacity = 0.7, title = "Animals") %>%
       addScaleBar(position="topleft", 
