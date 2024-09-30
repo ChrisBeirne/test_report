@@ -95,6 +95,7 @@ animals$timestamp_end <- ymd_hms(animals$timestamp_end)
 t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
 start_mammal <- t-as.difftime(48,units='days')
+start_tapir <- t-as.difftime(96,units='days')
 
 # Vultures
 tmp1 <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
@@ -105,7 +106,7 @@ tmp1 <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTi
 
 #Tapir
 tmp3 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=start_mammal)
+                       timestamp_start=start_tapir)
 # Remove the obvious outlier
 tmp3 <- tmp3[tmp3$location_lat>8,]
 
